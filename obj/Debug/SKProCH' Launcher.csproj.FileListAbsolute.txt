@@ -42,3 +42,26 @@ D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.Core
 D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.CopyComplete
 D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher.exe
 D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\SKProCH Launcher.exe.config
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\SKProCH Launcher.exe
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\AddingModpack.g.cs
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\MainWindow.g.cs
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\App.g.cs
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.cache
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.lref
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\AddingModpack.baml
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\MainWindow.baml
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher.g.resources
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCHLauncher.Properties.Resources.resources
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csproj.GenerateResource.cache
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csproj.CoreCompileInputs.cache
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csproj.CopyComplete
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher.exe
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignColors.dll
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignThemes.Wpf.dll
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignColors.pdb
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignThemes.Wpf.pdb
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignThemes.Wpf.xml
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\App.baml

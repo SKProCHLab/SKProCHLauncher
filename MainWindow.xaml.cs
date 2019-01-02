@@ -212,6 +212,7 @@ namespace SKProCHLauncher
     }
 
 
+
     public partial class MainWindow : Window
     {
         private static MainWindow form = new MainWindow();
@@ -242,9 +243,8 @@ namespace SKProCHLauncher
             }
             else
             {
-                InstallWindow IW = new InstallWindow();
                 try{
-                    this.Close();
+                    //this.Close();
                 }
                 catch (Exception)
                 {}
