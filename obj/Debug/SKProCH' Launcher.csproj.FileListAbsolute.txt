@@ -1,0 +1,44 @@
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csprojAssemblyReference.cache
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\MainWindow.g.cs
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\App.g.cs
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\MainWindow.baml
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCHLauncher.Properties.Resources.resources
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.GenerateResource.cache
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.CoreCompileInputs.cache
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\SKProCH Launcher.exe.config
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\SKProCH Launcher.exe
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.cache
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.lref
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH Launcher.g.resources
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH Launcher.exe
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\InstallWindow.g.cs
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\InstallWindow.baml
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\Ionic.Zip.dll
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\Newtonsoft.Json.dll
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\Newtonsoft.Json.pdb
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\bin\Debug\Newtonsoft.Json.xml
+D:\Programming\C#\SKProCH' Launcher\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.CopyComplete
+D:\Programming\C#\test\SKProCH' Launcher\bin\Debug\SKProCH Launcher.exe.config
+D:\Programming\C#\test\SKProCH' Launcher\bin\Debug\SKProCH Launcher.exe
+D:\Programming\C#\test\SKProCH' Launcher\bin\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\test\SKProCH' Launcher\bin\Debug\Newtonsoft.Json.pdb
+D:\Programming\C#\test\SKProCH' Launcher\bin\Debug\Newtonsoft.Json.xml
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csprojAssemblyReference.cache
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\AddingModpack.g.cs
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\InstallWindow.g.cs
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\MainWindow.g.cs
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\App.g.cs
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.cache
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher_MarkupCompile.lref
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\AddingModpack.baml
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\InstallWindow.baml
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\MainWindow.baml
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher.g.resources
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCHLauncher.Properties.Resources.resources
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.GenerateResource.cache
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.CoreCompileInputs.cache
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH' Launcher.csproj.CopyComplete
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher.exe
+D:\Programming\C#\test\SKProCH' Launcher\obj\Debug\SKProCH Launcher.pdb

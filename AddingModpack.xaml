@@ -1,0 +1,55 @@
+﻿<Window x:Class="SKProCHLauncher.AddingModpack"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SKProCHLauncher"
+        mc:Ignorable="d"
+        Title="AddingModpack" Height="450" Width="600">
+    <Grid x:Name="AddModpackWindow">
+        <Rectangle Fill="White"></Rectangle>
+        <StackPanel x:Name="PasteURLHere" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Label>Вставьте ссылку сюда:</Label>
+            <TextBox x:Name="URLBox" Height="25" Margin="0,10" TextChanged="URLBox_TextChanged"></TextBox>
+            <Button x:Name="SubmitURL" Visibility="Collapsed" Height="25" Margin="0,0,0,10" Click="SubmitURL_Click">Продолжить</Button>
+            <Button x:Name="CancelAddingModpack" Height="25" Click="CancelAddingModpack_Click">Отмена</Button>
+        </StackPanel>
+        <StackPanel x:Name="ConfigureModpacks" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Label FontFamily="Verdana" FontSize="14" HorizontalAlignment="Center">Возможно добавить следущие модпаки:</Label>
+            <ListBox x:Name="ModpacksListToAdd">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Orientation="Horizontal" Height="40">
+                <Image Height="40" Width="40" Source="{Binding Icon}"></Image>
+                <StackPanel>
+                    <Label Height="20" Content="{Binding ModpackName}" Margin="0" Padding="5,4,5,5" FontWeight="Bold" Width="250"></Label>
+                    <Label Height="20" Content="{Binding ModpackServer}" Padding="5,4,5,5" Width="250"></Label>
+                </StackPanel>
+                <StackPanel>
+                    <StackPanel Height="20" Orientation="Horizontal">
+                        <RadioButton Width="20" IsChecked="{Binding IsLocalLauncher, Mode=TwoWay}" Height="20" GroupName="{Binding ModpackName}" VerticalAlignment="Bottom" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"></RadioButton>
+                        <Label Padding="5,4,5,5">SKProCH's Launcher</Label>
+                    </StackPanel>
+                    <StackPanel Height="20" Orientation="Horizontal">
+                        <RadioButton Width="20" IsChecked="{Binding IsOtherLauncher, Mode=TwoWay}" Height="20" GroupName="{Binding ModpackName}" VerticalAlignment="Bottom" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"></RadioButton>
+                        <Button Padding="5,2,5,3" Click="Button_Click">Экспорт модпака</Button>
+                    </StackPanel>
+                </StackPanel>
+                <Grid Height="40" Width="40">
+                    <Viewbox Width="40" Height="40">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M20.37,8.91L19.37,10.64L7.24,3.64L8.24,1.91L11.28,3.66L12.64,3.29L16.97,5.79L17.34,7.16L20.37,8.91M6,19V7H11.07L18,11V19A2,2 0 0,1 16,21H8A2,2 0 0,1 6,19Z" Fill="Black" />
+                        </Canvas>
+                    </Viewbox>
+                    <Rectangle x:Name="DeleteModPackOnSetup" Opacity="0" MouseLeftButtonDown="DeleteModPackOnSetup_MouseLeftButtonDown"></Rectangle>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
