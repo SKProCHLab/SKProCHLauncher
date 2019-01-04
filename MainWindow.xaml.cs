@@ -18,16 +18,16 @@ using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 using Ionic.Zip;
 using Microsoft.Win32;
+using System.Diagnostics;
 
 namespace SKProCHLauncher
 {
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
+    #region ConfigClass
     public class UserConfig
     {
-        public string InstallFolder { get; set; }
-        public string ReferenceToConfig { get; set; }
         public List<ModPack> Modpacks { get; set; } 
         public List<Account> Accounts { get; set; }
         public UserConfig() {
@@ -175,14 +175,17 @@ namespace SKProCHLauncher
             }
         }
     }
+    #endregion
 
+
+    #region ModpackInfo
     public class ModpackInfo{
         public string ModpackName { get; set; }
         public string ModpackServer { get; set; }
         public string URL { get; set; }
-        public Image Icon { get; set; }
-        public string ID { get; set; }//Minecraft Version
-        public string ForgeID { get; set; }//Forge Version
+        public string Icon { get; set; }
+        public string MCVersion { get; set; }//Minecraft Version
+        public string ForgeVersion { get; set; }//Forge Version
         public string ForgeURL { get; set; }//Forge version.json URL
         
         public List<Version> Versions { get; set; }
@@ -210,55 +213,75 @@ namespace SKProCHLauncher
             }
         }
     }
-
-
+    #endregion
+    
+    #region AvailableModpacks
+    public class AvailableModpack{
+        public string Name { get; set; }
+        public string Icon { get; set; }
+        public string Server { get; set; }
+        public string McVersion { get; set; }
+        public string PathToManifest { get; set; }
+    }
+    #endregion
 
     public partial class MainWindow : Window
     {
+        public static string InstallPath = "";
         private static MainWindow form = new MainWindow();
         public static UserConfig CFG;
         public MainWindow()
         {
+            foreach (var item in Environment.GetCommandLineArgs())
+            {
+                if (item.Contains("SKpLauncher:"))
+                {
+                    List<string> temp = JsonConvert.DeserializeObject<List<string>>(item.Replace("SKpLauncher:", ""));
+                    RegistryKey AvailableModpacksRegistry = Registry.LocalMachine;
+                    AvailableModpacksRegistry = AvailableModpacksRegistry.OpenSubKey("SOFTWARE", true);
+                    AvailableModpacksRegistry = AvailableModpacksRegistry.CreateSubKey("SKProCHsLauncher", true);
+
+                    List<AvailableModpack> AllAvailableModpacks = JsonConvert.DeserializeObject<List<AvailableModpack>>(Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
+                    if (AllAvailableModpacks == null)
+                        AllAvailableModpacks = new List<AvailableModpack>();
+                    foreach (var ManifestsURL in temp)
+                    {
+                        ModpackInfo MpInfoToAdd = new ModpackInfo();
+                        try
+                        {
+                            using (WebClient wc = new WebClient())
+                            {
+                                MpInfoToAdd = JsonConvert.DeserializeObject<ModpackInfo>(wc.DownloadString(ManifestsURL));
+                            }
+                            AllAvailableModpacks.Add(new AvailableModpack() { PathToManifest = ManifestsURL, Icon = MpInfoToAdd.Icon, McVersion = MpInfoToAdd.MCVersion, Name = MpInfoToAdd.ModpackName, Server = MpInfoToAdd.ModpackServer });
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("При добавлении сборки возникла ошибка: " + ex.Message);
+                        }
+                    }
+                    AvailableModpacksRegistry.SetValue("AvailableModpacks", JsonConvert.SerializeObject(AllAvailableModpacks));
+                }
+            }
+
             RegistryKey registry = Registry.LocalMachine;
             registry = registry.OpenSubKey("SOFTWARE", true);
             registry = registry.CreateSubKey("SKProCHsLauncher", true);
-
+            if (Convert.ToString(registry.GetValue("PATH")) == "" || Convert.ToString(registry.GetValue("PATH")) == null)
+            {
+                registry.SetValue("PATH", Path.GetPathRoot(Environment.GetCommandLineArgs()[0]));
+                CFG = new UserConfig();
+                registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(CFG));
+            }else if(Convert.ToString(registry.GetValue("PATH")) != Path.GetPathRoot(Environment.GetCommandLineArgs()[0]))
+            {
+                Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
+                Environment.Exit(11);
+            }
 
             InitializeComponent();
             Path.GetPathRoot(Environment.GetCommandLineArgs()[0]);
             form = this;
-
-
-
-
-            if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"SKProCH's Launcher\MainConfig.json"))
-            {
-                CFG = JsonConvert.DeserializeObject<UserConfig>(File.ReadAllText(Environment.SpecialFolder.CommonApplicationData + @"SKProCH's Launcher\MainConfig.json"));
-                string FinalReference = "";
-                while (CFG.ReferenceToConfig != null)
-                {
-                    if (File.Exists(CFG.ReferenceToConfig))
-                    {
-                        FinalReference = CFG.ReferenceToConfig;
-                        CFG = JsonConvert.DeserializeObject<UserConfig>(File.ReadAllText(CFG.ReferenceToConfig));
-                    }
-                    else
-                        break;
-                }
-
-                if (FinalReference != "")
-                {
-                    File.Copy(FinalReference, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"SKProCH's Launcher\MainConfig.json");
-                }
-            }
-            else
-            {
-                try{
-                    //this.Close();
-                }
-                catch (Exception)
-                {}
-            }*/
+            
         }
 
         //Добавить модпак

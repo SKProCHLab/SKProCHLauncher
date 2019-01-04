@@ -29,17 +29,7 @@ namespace SKProCHLauncher
             InitializeComponent();
             form = this;
         }
-
-        #region Icons Class
-        public class IconSet
-        {
-            public Dictionary<string, string> iconsset { get; set; }
-            public IconSet()
-            {
-                iconsset = new Dictionary<string, string>();
-            }
-        }
-        #endregion 
+        
         #region ListBoxIcons Class
         class ListBoxIcons
         {
@@ -50,20 +40,20 @@ namespace SKProCHLauncher
 
         public static void InitializeIcons()
         {
-            IconSet Default;
-            IconSet Custom;
+            Dictionary<string, string> Default;
+            Dictionary<string, string> Custom;
             using (WebClient wc = new WebClient())
             {
                 string JSON = wc.DownloadString(@"https://gdurl.com/u9FJ");
-                Default = JsonConvert.DeserializeObject<IconSet>(JSON);
+                Default = JsonConvert.DeserializeObject<Dictionary<string, string>>(JSON);
             }
-            Custom = new IconSet();
+            Custom = new Dictionary<string, string>();
 
-            /*var CustomIconsPath = Directory.GetFiles(CFG.InstallFolder + @"\Icons\CustonIcons\");
+            var CustomIconsPath = Directory.GetFiles(MainWindow.InstallPath + @"\Icons\CustonIcons\");
             foreach (var item in CustomIconsPath)
             {
-                Custom.iconsset.Add(item, System.IO.Path.GetFileNameWithoutExtension(item));
-            }*/
+                Custom.Add(item, System.IO.Path.GetFileNameWithoutExtension(item));
+            }
 
             form.Dispatcher.Invoke(new Action(() => {
                 form.DefaultIconsListBox.Items.Clear();
@@ -71,11 +61,11 @@ namespace SKProCHLauncher
 
                 form.AllIcons.Visibility = Visibility.Visible;
 
-                foreach (var defitem in Default.iconsset)
+                foreach (var defitem in Default)
                 {
                     form.DefaultIconsListBox.Items.Add(new ListBoxIcons() { IconName = defitem.Value, IconPath = defitem.Key });
                 }
-                foreach (var cusitem in Custom.iconsset)
+                foreach (var cusitem in Custom)
                 {
                     form.CustomIconsListBox.Items.Add(new ListBoxIcons() { IconName = cusitem.Value, IconPath = cusitem.Key });
                 }
@@ -117,7 +107,7 @@ namespace SKProCHLauncher
             {
                 using (WebClient wc = new WebClient())
                 {
-                    wc.DownloadFile(URL, CFG.InstallFolder + @"\Icons\DefaultIcons\" + NAME + "." + URL.Remove(0, URL.LastIndexOf("." + 1)));
+                    wc.DownloadFile(URL, MainWindow.InstallPath + @"\Icons\DefaultIcons\" + NAME + "." + URL.Remove(0, URL.LastIndexOf("." + 1)));
                 }
             }
             //
@@ -137,7 +127,7 @@ namespace SKProCHLauncher
             form.AddCustomIconForm.Visibility = Visibility.Collapsed;
             try
             {
-                File.Copy(form.IconPath.Text, CFG.InstallFolder + @"\Icons\CustomIcons\" + form.IconName);
+                File.Copy(form.IconPath.Text, MainWindow.InstallPath + @"\Icons\CustomIcons\" + form.IconName);
             }
             catch (Exception)
             {
@@ -145,7 +135,7 @@ namespace SKProCHLauncher
                 {
                     using (WebClient wc = new WebClient())
                     {
-                        wc.DownloadFile(form.IconPath.Text, CFG.InstallFolder + @"\Icons\CustomIcons\" + form.IconName);
+                        wc.DownloadFile(form.IconPath.Text, MainWindow.InstallPath + @"\Icons\CustomIcons\" + form.IconName);
                     }
                 }
                 catch (Exception)
