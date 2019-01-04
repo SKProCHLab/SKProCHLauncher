@@ -66,3 +66,4 @@ D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignThemes.Wpf.pdb
 D:\Programming\C#\SKProCH's Launcher\bin\Debug\MaterialDesignThemes.Wpf.xml
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\App.baml
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csprojAssemblyReference.cache
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\IconManager.g.cs
