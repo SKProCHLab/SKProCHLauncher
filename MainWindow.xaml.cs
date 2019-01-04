@@ -19,6 +19,8 @@ using System.Runtime.InteropServices;
 using Ionic.Zip;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Windows.Shapes;
+using System.Windows.Media.Animation;
 
 namespace SKProCHLauncher
 {
@@ -230,8 +232,12 @@ namespace SKProCHLauncher
         public static string InstallPath = "";
         private static MainWindow form = new MainWindow();
         public static UserConfig CFG;
+
+        public static Rectangle CurrentChoosenTab;
         public MainWindow()
         {
+
+            #region ProcessingCommandlineArgs
             foreach (var item in Environment.GetCommandLineArgs())
             {
                 if (item.Contains("SKpLauncher:"))
@@ -263,33 +269,95 @@ namespace SKProCHLauncher
                     AvailableModpacksRegistry.SetValue("AvailableModpacks", JsonConvert.SerializeObject(AllAvailableModpacks));
                 }
             }
-
+            #endregion
+            
             RegistryKey registry = Registry.LocalMachine;
             registry = registry.OpenSubKey("SOFTWARE", true);
             registry = registry.CreateSubKey("SKProCHsLauncher", true);
             if (Convert.ToString(registry.GetValue("PATH")) == "" || Convert.ToString(registry.GetValue("PATH")) == null)
             {
-                registry.SetValue("PATH", Path.GetPathRoot(Environment.GetCommandLineArgs()[0]));
+                registry.SetValue("PATH", System.IO.Path.GetPathRoot(Environment.GetCommandLineArgs()[0]));
                 CFG = new UserConfig();
                 registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(CFG));
-            }else if(Convert.ToString(registry.GetValue("PATH")) != Path.GetPathRoot(Environment.GetCommandLineArgs()[0]))
+            }else if(Convert.ToString(registry.GetValue("PATH")) != System.IO.Path.GetPathRoot(Environment.GetCommandLineArgs()[0]))
             {
-                Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
+                Process.Start(System.IO.Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
                 Environment.Exit(11);
             }
 
             InitializeComponent();
-            Path.GetPathRoot(Environment.GetCommandLineArgs()[0]);
             form = this;
-            
+
+            CurrentChoosenTab = ChooseMainModpacks;
+            form.Activated += Form_Activated;
         }
 
-        //Добавить модпак
-        private void Rectangle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void Button_Folder_Click(object sender, RoutedEventArgs e)
         {
-            
+            Process.Start(InstallPath);
         }
 
-        
+        private void ChooseMainModpacks_Event(object sender, MouseButtonEventArgs e)
+        {
+            CurrentChoosenTab = ChooseMainModpacks;
+            UpdateChoosenTab(0.3);
+            ExportModpack.Visibility = Visibility.Collapsed;
+            AvailableModpacks.Visibility = Visibility.Collapsed;
+            MainModpacks.Visibility = Visibility.Visible;
+        }
+
+        private void ChooseExportModpacks_Event(object sender, MouseButtonEventArgs e)
+        {
+            CurrentChoosenTab = ChooseExportModpacks;
+            UpdateChoosenTab(0.3);
+            MainModpacks.Visibility = Visibility.Collapsed;
+            AvailableModpacks.Visibility = Visibility.Collapsed;
+            ExportModpack.Visibility = Visibility.Visible;
+        }
+
+        private void ChooseAvailableModpacks_Event(object sender, MouseButtonEventArgs e)
+        {
+            CurrentChoosenTab = ChooseAvailableModpacks;
+            UpdateChoosenTab(0.3);
+            ExportModpack.Visibility = Visibility.Collapsed;
+            MainModpacks.Visibility = Visibility.Collapsed;
+            AvailableModpacks.Visibility = Visibility.Visible;
+        }
+
+        private void Form_Activated(object sender, EventArgs e)
+        {
+            UpdateChoosenTab(0.00000001);
+        }
+
+        public static void UpdateChoosenTab(double duration)
+        {
+            Point relativePoint = CurrentChoosenTab.TransformToAncestor(form)
+                                          .Transform(new Point(0, 0));
+            
+            form.LeftBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X - 25,0,0,0), TimeSpan.FromSeconds(duration)));
+            form.RightBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth, 0, 0, 0), TimeSpan.FromSeconds(duration)));
+            form.LeftFill.BeginAnimation(WidthProperty, new DoubleAnimation(form.LeftFill.ActualWidth, relativePoint.X - 15, TimeSpan.FromSeconds(duration)));
+            form.RightFill.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth + 10, 0, 0, 0), TimeSpan.FromSeconds(duration)));
+            form.DarkBackground.BeginAnimation(WidthProperty, new DoubleAnimation(CurrentChoosenTab.ActualWidth, TimeSpan.FromSeconds(duration)));
+            form.DarkBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X, 0, 0, 0), TimeSpan.FromSeconds(duration)));
+        }
+    }
+
+    public class TopMarginConverter : IValueConverter
+    {
+        #region IValueConverter Members
+
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            double sliderValue = (double)value;
+            return new Thickness(0, sliderValue - 1, 0, 0);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
+        #endregion
     }
 }

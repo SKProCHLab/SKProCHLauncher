@@ -8,6 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("whiteicon.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("tabs_left.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("tabs_right.png")]
 
 
