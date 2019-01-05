@@ -15,6 +15,8 @@ using System.Net;
 using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.IO;
+using Path = System.IO.Path;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SKProCHLauncher
 {
@@ -41,6 +43,7 @@ namespace SKProCHLauncher
 
         private void InitializeIcons()
         {
+            AllIcons.Visibility = Visibility.Visible;
             Dictionary<string, string> Default;
             Dictionary<string, string> Custom;
             using (WebClient wc = new WebClient())
@@ -50,16 +53,16 @@ namespace SKProCHLauncher
             }
             Custom = new Dictionary<string, string>();
 
-            if (Directory.Exists(MainWindow.InstallPath + @"\Icons\CustonIcons\"))
+            if (Directory.Exists(MainWindow.InstallPath + @"\Icons\CustomIcons\"))
             {
-                var CustomIconsPath = Directory.GetFiles(MainWindow.InstallPath + @"\Icons\CustonIcons\");
+                var CustomIconsPath = Directory.GetFiles(MainWindow.InstallPath + @"\Icons\CustomIcons\");
                 foreach (var item in CustomIconsPath)
                 {
                     Custom.Add(item, System.IO.Path.GetFileNameWithoutExtension(item));
                 }
             }
             else
-                Directory.CreateDirectory(MainWindow.InstallPath + @"\Icons\CustonIcons\");
+                Directory.CreateDirectory(MainWindow.InstallPath + @"\Icons\CustomIcons\");
 
             form.Dispatcher.Invoke(new Action(() => {
                 form.DefaultIconsListBox.Items.Clear();
@@ -131,17 +134,33 @@ namespace SKProCHLauncher
         //Добавление новой иконки
         private void AddCustomIconButton_Click(object sender, RoutedEventArgs e)
         {
-            form.AddCustomIconForm.Visibility = Visibility.Collapsed;
+            bool temp_IsError = false;
             try
             {
                 File.Copy(form.IconPath.Text, MainWindow.InstallPath + @"\Icons\CustomIcons\" + form.IconName);
             }
             catch (Exception)
             {
+                try
+                {
                     using (WebClient wc = new WebClient())
                     {
-                        wc.DownloadFileAsync(new Uri(form.IconPath.Text), @"D:\Programming\C#\SKProCH's Launcher\bin\Debug\Icons\CustonIcons\" + form.IconName + ".icon");
+                        wc.DownloadFile(new Uri(form.IconPath.Text), Path.Combine(MainWindow.InstallPath, @"Icons\CustomIcons", form.IconName.Text + ".skplaucnhericon"));
                     }
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Что-то не так с файлом. Проверьте еще раз");
+                    form.AllIcons.Visibility = Visibility.Collapsed;
+                    form.AddCustomIconForm.Visibility = Visibility.Visible;
+                    temp_IsError = true;
+                }
+            }
+
+            if (!temp_IsError)
+            {
+                form.AddCustomIconForm.Visibility = Visibility.Collapsed;
+                InitializeIcons();
             }
         }
 

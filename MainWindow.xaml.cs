@@ -285,7 +285,7 @@ namespace SKProCHLauncher
 
             InitializeComponent();
             form = this;
-
+            
             IconManager IM = new IconManager();
 
             CurrentChoosenTab = ChooseMainModpacks;
