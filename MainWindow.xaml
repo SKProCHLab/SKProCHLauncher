@@ -21,7 +21,6 @@
             <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5,0,200,2" >
                 <Button x:Name="Button_AddModpack" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" Margin="0,5,6,5" Padding="3,2,5,2">
                     <StackPanel Orientation="Horizontal">
-                        
                         <materialDesign:PackIcon Kind="AddBox" Height="24" Width="24" Margin="0,0,1,0"/>
                         <TextBlock VerticalAlignment="Center" >Добавить модпак</TextBlock>
                     </StackPanel>
@@ -40,7 +39,7 @@
                 </Button>
             </WrapPanel>
         </Grid>
-        <Grid x:Name="ModpacksGrid" Margin="0,41,200,0" Grid.ColumnSpan="2">
+        <Grid x:Name="ModpacksGrid" Margin="0,41,200,0">
             <Grid x:Name="ModpacksListTabs" Height="36" VerticalAlignment="Top">
                 <Grid x:Name="LeftBackground" Width="25" HorizontalAlignment="Left">
                     <Rectangle Width="25" RadiusX="10" HorizontalAlignment="Left" RadiusY="10" Fill="#FF3C3C3C" ></Rectangle>
@@ -59,9 +58,6 @@
                     <Rectangle Fill="#FF303030" RadiusX="10" RadiusY="10"/>
                     <Rectangle Height="10" VerticalAlignment="Bottom" Fill="#FF303030"/>
                 </Grid>
-
-                
-
                 <StackPanel Orientation="Horizontal">
                     <Grid Margin="25,0,0,0">
                         <TextBlock  HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Обычные сборки</TextBlock>
@@ -78,9 +74,58 @@
                 </StackPanel>
             </Grid>
             <Grid x:Name="ModpacksLists" Margin="0,36,0,0">
-                <Grid x:Name="MainModpacks"></Grid>
-                <Grid x:Name="ExportModpack" Visibility="Hidden"></Grid>
-                <Grid x:Name="AvailableModpacks" Visibility="Hidden"></Grid>
+                <Grid x:Name="MainModpacks">
+                    <ListBox x:Name="LB_MainModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_MainModpack_Event">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5,0" Height="80" Width="80">
+                                    <Image Width="50" Height="50" Source="{Binding Path=IconPath}" />
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                    </ListBox>
+                </Grid>
+                <Grid x:Name="ExportModpack" Visibility="Hidden">
+                    <ListBox x:Name="LB_ExportModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_ExportModpack_Event">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5,0" Height="80" Width="80">
+                                    <Image Width="50" Height="50" Source="{Binding Path=IconPath}" />
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                    </ListBox>
+                </Grid>
+                <Grid x:Name="AvailableModpacks" Visibility="Hidden">
+                    <ListBox x:Name="LB_AvailableModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_AvailableModpacks_Event">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5,0" Height="80" Width="80">
+                                    <Image Width="50" Height="50" Source="{Binding Path=Icon}" />
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=Name}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                    </ListBox>
+                    <TextBlock x:Name="NoModpacksAvailable" VerticalAlignment="Center" HorizontalAlignment="Center">У вас нет доступных сборок</TextBlock>
+                </Grid>
             </Grid>
         </Grid>
         <Grid x:Name="ModpackInfoGrid" Width="200" HorizontalAlignment="Right" Margin="{Binding ElementName=ControlsPanel, Path=ActualHeight, Converter={StaticResource TopMarginConverter}}" Background="#FF3C3C3C">
@@ -95,7 +140,5 @@
                 <Button x:Name="DeleteModpack" Margin="5,5,5,0" Height="25">Удаление</Button>
             </StackPanel>
         </Grid>
-
-
     </Grid>
 </Window>

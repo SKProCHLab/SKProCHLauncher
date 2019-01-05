@@ -28,6 +28,7 @@ namespace SKProCHLauncher
         {
             InitializeComponent();
             form = this;
+            InitializeIcons();
         }
         
         #region ListBoxIcons Class
@@ -38,7 +39,7 @@ namespace SKProCHLauncher
         }
         #endregion
 
-        public static void InitializeIcons()
+        private void InitializeIcons()
         {
             Dictionary<string, string> Default;
             Dictionary<string, string> Custom;
@@ -49,11 +50,16 @@ namespace SKProCHLauncher
             }
             Custom = new Dictionary<string, string>();
 
-            var CustomIconsPath = Directory.GetFiles(MainWindow.InstallPath + @"\Icons\CustonIcons\");
-            foreach (var item in CustomIconsPath)
+            if (Directory.Exists(MainWindow.InstallPath + @"\Icons\CustonIcons\"))
             {
-                Custom.Add(item, System.IO.Path.GetFileNameWithoutExtension(item));
+                var CustomIconsPath = Directory.GetFiles(MainWindow.InstallPath + @"\Icons\CustonIcons\");
+                foreach (var item in CustomIconsPath)
+                {
+                    Custom.Add(item, System.IO.Path.GetFileNameWithoutExtension(item));
+                }
             }
+            else
+                Directory.CreateDirectory(MainWindow.InstallPath + @"\Icons\CustonIcons\");
 
             form.Dispatcher.Invoke(new Action(() => {
                 form.DefaultIconsListBox.Items.Clear();
@@ -71,9 +77,10 @@ namespace SKProCHLauncher
                 }
                 form.CustomIconsListBox.Items.Add(new ListBoxIcons() { IconPath = @"https://gdurl.com/M8Ps", IconName = "Add icon" });
             }));
-
-
-
+            if (!form.IsVisible)
+            {
+                form.Show();
+            }
         }
 
         private void DefaultIconsListBox_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -131,17 +138,10 @@ namespace SKProCHLauncher
             }
             catch (Exception)
             {
-                try
-                {
                     using (WebClient wc = new WebClient())
                     {
-                        wc.DownloadFile(form.IconPath.Text, MainWindow.InstallPath + @"\Icons\CustomIcons\" + form.IconName);
+                        wc.DownloadFileAsync(new Uri(form.IconPath.Text), @"D:\Programming\C#\SKProCH's Launcher\bin\Debug\Icons\CustonIcons\" + form.IconName + ".icon");
                     }
-                }
-                catch (Exception)
-                {
-                    System.Windows.MessageBox.Show("Упс, что-то пошло не так. Проверьте путь к файлу!");
-                }
             }
         }
 

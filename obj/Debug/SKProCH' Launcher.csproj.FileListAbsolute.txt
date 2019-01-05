@@ -66,3 +66,4 @@ D:\Programming\C#\SKProCH's Launcher\obj\Debug\App.baml
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\IconManager.g.cs
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\IconManager.baml
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\GeneratedInternalTypeHelper.g.cs
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csprojAssemblyReference.cache
