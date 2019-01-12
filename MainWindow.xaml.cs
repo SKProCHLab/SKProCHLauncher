@@ -49,14 +49,14 @@ namespace SKProCHLauncher
 
         public class ModPack
         {
+            private readonly object locker = new object();
+            private readonly List<ModpackInfo.Version.Download> ZipArchieves = new List<ModpackInfo.Version.Download>();
             private int ActiveDownloadCount;
 
             private bool DownLoadsScheduled;
-            private readonly object locker = new object();
 
 
             private string NewVersion;
-            private readonly List<ModpackInfo.Version.Download> ZipArchieves = new List<ModpackInfo.Version.Download>();
             public string Name { get; set; }
             public string ServerName { get; set; }
             public string UpdatesURL { get; set; }
