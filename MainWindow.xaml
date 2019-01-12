@@ -16,25 +16,28 @@
         <Grid.Resources>
             <local:TopMarginConverter x:Key="TopMarginConverter" />
         </Grid.Resources>
-        <Grid x:Name="ControlsPanel"  VerticalAlignment="Top" >
-            <Rectangle Fill="#FF3C3C3C"></Rectangle>
-            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5,0,200,2" >
-                <Button x:Name="Button_AddModpack" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" Margin="0,5,6,5" Padding="3,2,5,2">
+        <Grid x:Name="ControlsPanel" VerticalAlignment="Top">
+            <Rectangle Fill="#FF3C3C3C" />
+            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5,0,200,2">
+                <Button x:Name="Button_AddModpack" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C"
+                        Margin="0,5,6,5" Padding="3,2,5,2" Click="Button_AddModpack_Click">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="AddBox" Height="24" Width="24" Margin="0,0,1,0"/>
-                        <TextBlock VerticalAlignment="Center" >Добавить модпак</TextBlock>
+                        <materialDesign:PackIcon Kind="AddBox" Height="24" Width="24" Margin="0,0,1,0" />
+                        <TextBlock VerticalAlignment="Center">Добавить модпак</TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="Button_Settings" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" Margin="0,5,6,5" Padding="3,2,5,2">
+                <Button x:Name="Button_Settings" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C"
+                        Margin="0,5,6,5" Padding="3,2,5,2">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Settings" Height="24" Width="24" Margin="0,0,1,0"/>
-                        <TextBlock VerticalAlignment="Center" >Настройки</TextBlock>
+                        <materialDesign:PackIcon Kind="Settings" Height="24" Width="24" Margin="0,0,1,0" />
+                        <TextBlock VerticalAlignment="Center">Настройки</TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="Button_Folder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" Margin="0,5,6,5" Padding="3,2,5,2" Click="Button_Folder_Click">
+                <Button x:Name="Button_Folder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C"
+                        Margin="0,5,6,5" Padding="3,2,5,2" Click="Button_Folder_Click">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Folder" Height="24" Width="24" Margin="0,0,1,0"/>
-                        <TextBlock VerticalAlignment="Center" >Папка</TextBlock>
+                        <materialDesign:PackIcon Kind="Folder" Height="24" Width="24" Margin="0,0,1,0" />
+                        <TextBlock VerticalAlignment="Center">Папка</TextBlock>
                     </StackPanel>
                 </Button>
             </WrapPanel>
@@ -42,85 +45,96 @@
         <Grid x:Name="ModpacksGrid" Margin="0,41,200,0">
             <Grid x:Name="ModpacksListTabs" Height="36" VerticalAlignment="Top">
                 <Grid x:Name="LeftBackground" Width="25" HorizontalAlignment="Left">
-                    <Rectangle Width="25" RadiusX="10" HorizontalAlignment="Left" RadiusY="10" Fill="#FF3C3C3C" ></Rectangle>
-                    <Rectangle Width="25" Height="18" HorizontalAlignment="Left" VerticalAlignment="Top" Fill="#FF3C3C3C"></Rectangle>
-                    <Rectangle Width="10" HorizontalAlignment="Left" Fill="#FF3C3C3C"></Rectangle>
+                    <Rectangle Width="25" RadiusX="10" HorizontalAlignment="Left" RadiusY="10" Fill="#FF3C3C3C" />
+                    <Rectangle Width="25" Height="18" HorizontalAlignment="Left" VerticalAlignment="Top"
+                               Fill="#FF3C3C3C" />
+                    <Rectangle Width="10" HorizontalAlignment="Left" Fill="#FF3C3C3C" />
                 </Grid>
                 <Grid x:Name="RightBackground" Width="25" HorizontalAlignment="Left">
-                    <Rectangle Width="25" RadiusX="10" HorizontalAlignment="Left" RadiusY="10" Fill="#FF3C3C3C" ></Rectangle>
-                    <Rectangle Width="25" Height="18" HorizontalAlignment="Left" VerticalAlignment="Top" Fill="#FF3C3C3C"></Rectangle>
-                    <Rectangle Width="10" HorizontalAlignment="Right" Fill="#FF3C3C3C"></Rectangle>
+                    <Rectangle Width="25" RadiusX="10" HorizontalAlignment="Left" RadiusY="10" Fill="#FF3C3C3C" />
+                    <Rectangle Width="25" Height="18" HorizontalAlignment="Left" VerticalAlignment="Top"
+                               Fill="#FF3C3C3C" />
+                    <Rectangle Width="10" HorizontalAlignment="Right" Fill="#FF3C3C3C" />
                 </Grid>
-                <Rectangle x:Name="LeftFill" Width="0" HorizontalAlignment="Left" Fill="#FF3C3C3C"></Rectangle>
-                <Rectangle x:Name="RightFill" Margin="0,0,0,0"  Fill="#FF3C3C3C"></Rectangle>
+                <Rectangle x:Name="LeftFill" Width="0" HorizontalAlignment="Left" Fill="#FF3C3C3C" />
+                <Rectangle x:Name="RightFill" Margin="0,0,0,0" Fill="#FF3C3C3C" />
                 <Grid x:Name="DarkBackground" Margin="25,0,0,0" Width="0" HorizontalAlignment="Left">
-                    <Rectangle Fill="#FF3C3C3C"></Rectangle>
-                    <Rectangle Fill="#FF303030" RadiusX="10" RadiusY="10"/>
-                    <Rectangle Height="10" VerticalAlignment="Bottom" Fill="#FF303030"/>
+                    <Rectangle Fill="#FF3C3C3C" />
+                    <Rectangle Fill="#FF303030" RadiusX="10" RadiusY="10" />
+                    <Rectangle Height="10" VerticalAlignment="Bottom" Fill="#FF303030" />
                 </Grid>
                 <StackPanel Orientation="Horizontal">
                     <Grid Margin="25,0,0,0">
-                        <TextBlock  HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Обычные сборки</TextBlock>
-                        <Rectangle x:Name="ChooseMainModpacks" Fill="#FF910101" Opacity="0" MouseLeftButtonDown="ChooseMainModpacks_Event"></Rectangle>
-                    </Grid>
-                    <Grid Margin="20,0,0,0" >
-                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Экспортируемые сборки</TextBlock>
-                        <Rectangle x:Name="ChooseExportModpacks" Fill="#FF910101" Opacity="0" MouseLeftButtonDown="ChooseExportModpacks_Event"></Rectangle>
+                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Обычные сборки</TextBlock>
+                        <Rectangle x:Name="ChooseMainModpacks" Fill="#FF910101" Opacity="0"
+                                   MouseLeftButtonDown="ChooseMainModpacks_Event" />
                     </Grid>
                     <Grid Margin="20,0,0,0">
-                        <TextBlock  HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Доступные сборки</TextBlock>
-                        <Rectangle x:Name="ChooseAvailableModpacks" Fill="#FF910101" Opacity="0" MouseLeftButtonDown="ChooseAvailableModpacks_Event"></Rectangle>
+                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Экспортируемые сборки</TextBlock>
+                        <Rectangle x:Name="ChooseExportModpacks" Fill="#FF910101" Opacity="0"
+                                   MouseLeftButtonDown="ChooseExportModpacks_Event" />
+                    </Grid>
+                    <Grid Margin="20,0,0,0">
+                        <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Padding="5,0">Доступные сборки</TextBlock>
+                        <Rectangle x:Name="ChooseAvailableModpacks" Fill="#FF910101" Opacity="0"
+                                   MouseLeftButtonDown="ChooseAvailableModpacks_Event" />
                     </Grid>
                 </StackPanel>
             </Grid>
             <Grid x:Name="ModpacksLists" Margin="0,36,0,0">
                 <Grid x:Name="MainModpacks">
-                    <ListBox x:Name="LB_MainModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_MainModpack_Event">
+                    <ListBox x:Name="LB_MainModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             MouseLeftButtonDown="LB_MainModpack_Event">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="5,0" Height="80" Width="80">
                                     <Image Width="50" Height="50" Source="{Binding Path=IconPath}" />
-                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}"
+                                               HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel/>
+                                <WrapPanel />
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                     </ListBox>
                 </Grid>
                 <Grid x:Name="ExportModpack" Visibility="Hidden">
-                    <ListBox x:Name="LB_ExportModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_ExportModpack_Event">
+                    <ListBox x:Name="LB_ExportModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             MouseLeftButtonDown="LB_ExportModpack_Event">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="5,0" Height="80" Width="80">
                                     <Image Width="50" Height="50" Source="{Binding Path=IconPath}" />
-                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=IconName}"
+                                               HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel/>
+                                <WrapPanel />
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                     </ListBox>
                 </Grid>
                 <Grid x:Name="AvailableModpacks" Visibility="Hidden">
-                    <ListBox x:Name="LB_AvailableModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseLeftButtonDown="LB_AvailableModpacks_Event">
+                    <ListBox x:Name="LB_AvailableModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             MouseLeftButtonDown="LB_AvailableModpacks_Event">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="5,0" Height="80" Width="80">
                                     <Image Width="50" Height="50" Source="{Binding Path=Icon}" />
-                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=Name}" HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0"/>
+                                    <TextBlock FontSize="14" TextAlignment="Center" Text="{Binding Path=Name}"
+                                               HorizontalAlignment="Center" TextWrapping="Wrap" Padding="-3,0" />
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel/>
+                                <WrapPanel />
                             </ItemsPanelTemplate>
                         </ListBox.ItemsPanel>
                     </ListBox>
@@ -128,12 +142,12 @@
                 </Grid>
             </Grid>
         </Grid>
-        <Grid x:Name="ModpackInfoGrid" Width="200" HorizontalAlignment="Right" Margin="{Binding ElementName=ControlsPanel, Path=ActualHeight, Converter={StaticResource TopMarginConverter}}" Background="#FF3C3C3C">
+        <Grid x:Name="ModpackInfoGrid" Width="200" HorizontalAlignment="Right" Background="#FF3C3C3C">
             <StackPanel Orientation="Vertical">
                 <Label FontStyle="Italic" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center">Настройки модпака</Label>
                 <Grid x:Name="ModpackIconGrid">
-                    <Rectangle Height="182" Width="182" Stroke="Black"></Rectangle>
-                    <Image x:Name="ModpackIcon" Width="180" Height="180"></Image>
+                    <Rectangle Height="182" Width="182" Stroke="Black" />
+                    <Image x:Name="ModpackIcon" Width="180" Height="180" />
                 </Grid>
                 <Button x:Name="PlayAutonomic" Margin="5,5,5,0" Height="25">Играть в автономном режиме</Button>
                 <Button x:Name="EditModpack" Margin="5,5,5,0" Height="25">Редактировать сборку</Button>

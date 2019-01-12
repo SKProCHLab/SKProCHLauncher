@@ -1,48 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Web;
-using System.Net;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
-using Newtonsoft.Json;
-using System.Runtime.InteropServices;
+using System.Net;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 using Ionic.Zip;
 using Microsoft.Win32;
-using System.Diagnostics;
-using System.Windows.Shapes;
-using System.Windows.Media.Animation;
+using Newtonsoft.Json;
+using Path = System.IO.Path;
 
 namespace SKProCHLauncher
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    ///     Логика взаимодействия для MainWindow.xaml
     /// </summary>
+
     #region ConfigClass
+
     public class UserConfig
     {
-        public List<ModPack> Modpacks { get; set; } 
-        public List<Account> Accounts { get; set; }
-        public UserConfig() {
-            Modpacks = new List<ModPack>();
+        public UserConfig()
+        {
+            LocalModpacks = new List<ModPack>();
+            ExportedModpacks = new List<ModPack>();
             Accounts = new List<Account>();
         }
-        #region WinApi
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool DeleteFile(string lpFileName);
-        #endregion 
 
-        public class Account{
+        public List<ModPack> LocalModpacks { get; set; }
+        public List<ModPack> ExportedModpacks { get; set; }
+        public List<Account> Accounts { get; set; }
+
+        public class Account
+        {
             public string NickName { get; set; }
             public string UUID { get; set; }
 
@@ -51,90 +46,100 @@ namespace SKProCHLauncher
             public string Login { get; set; }
             public string Password { get; set; }
         }
-        
-        public class ModPack{
-            public bool IsLocalLauncher { get; set; }
-            public bool IsOtherLauncher { get; set; }
-            public string Path { get; set; }
+
+        public class ModPack
+        {
+            private int ActiveDownloadCount;
+
+            private bool DownLoadsScheduled;
+            private readonly object locker = new object();
+
+
+            private string NewVersion;
+            private readonly List<ModpackInfo.Version.Download> ZipArchieves = new List<ModpackInfo.Version.Download>();
+            public string Name { get; set; }
+            public string ServerName { get; set; }
             public string UpdatesURL { get; set; }
             public string CurrentVersion { get; set; }
             public string Icon { get; set; }
-            public string ID { get; set; }//Minecraft Version
-            public string ForgeID { get; set; }//Forge Version
-            public string ForgeURL { get; set; }//Forge version.json URL
+            public string Path { get; set; }
 
-            public string Name { get; set; }
-            public string ProjectName { get; set; }
+            //OnlyLocal
+            public string ID { get; set; } //Minecraft Version
+            public string ForgeID { get; set; } //Forge Version
+            public string ForgeURL { get; set; } //Forge version.json URL
+            public List<Account> Accounts { get; set; }
+            public string ChoosenAccount { get; set; }
 
-            private string NewVersion;
             private void CheckUpdates()
             {
                 try
                 {
-                    WebClient wc = new WebClient();
-                    wc.DownloadFile(UpdatesURL, Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) + @"\SKProCH's Version File.tmp");
-                    string VersionsContent = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) + @"\SKProCH's Version File.tmp");
+                    var wc = new WebClient();
+                    wc.DownloadFile(UpdatesURL,
+                        Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) +
+                        @"\SKProCH's Version File.tmp");
+                    var VersionsContent =
+                        File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) +
+                                         @"\SKProCH's Version File.tmp");
                     try
                     {
-                        File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) + @"\SKProCH's Version File.tmp");
+                        File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.InternetCache) +
+                                    @"\SKProCH's Version File.tmp");
                     }
                     catch (Exception)
-                    {}
+                    {
+                    }
 
                     try
                     {
-                        ModpackInfo MU = JsonConvert.DeserializeObject<ModpackInfo>(VersionsContent);
-                        if (Convert.ToInt32((MU.Versions[MU.Versions.Count - 1].VersionNumber).Replace(".", "")) > Convert.ToInt32(CurrentVersion.Replace(".", "")))
+                        var MU = JsonConvert.DeserializeObject<ModpackInfo>(VersionsContent);
+                        if (Convert.ToInt32(MU.Versions[MU.Versions.Count - 1].VersionNumber.Replace(".", "")) >
+                            Convert.ToInt32(CurrentVersion.Replace(".", "")))
                         {
-                            NewVersion = (MU.Versions[MU.Versions.Count - 1].VersionNumber);
+                            NewVersion = MU.Versions[MU.Versions.Count - 1].VersionNumber;
                             //
 
                             //Построение общих различий
-                            List<ModpackInfo.Version.Download> ToDownload = new List<ModpackInfo.Version.Download>(); //Финальные файлы
-                            List<ModpackInfo.Version.Delete> ToDelete = new List<ModpackInfo.Version.Delete>();
+                            var ToDownload = new List<ModpackInfo.Version.Download>(); //Финальные файлы
+                            var ToDelete = new List<ModpackInfo.Version.Delete>();
 
                             foreach (var item in MU.Versions)
-                            {
-                                if (Convert.ToInt32((item.VersionNumber).Replace(".", "")) > Convert.ToInt32(CurrentVersion.Replace(".", "")))
+                                if (Convert.ToInt32(item.VersionNumber.Replace(".", "")) >
+                                    Convert.ToInt32(CurrentVersion.Replace(".", "")))
                                 {
                                     foreach (var deleteitem in item.ListToDelete)
-                                    {
-                                        for (int i = 0; i < ToDownload.Count; i++)
-                                        {
+                                        for (var i = 0; i < ToDownload.Count; i++)
                                             if (deleteitem.Path == ToDownload[i].Path && !ToDownload[i].IsArchive)
-                                            {
                                                 ToDownload.RemoveAt(i);
-                                            }
-                                        }
-                                    }
 
                                     ToDownload.AddRange(item.ListToDownload);
                                     ToDelete.AddRange(item.ListToDelete);
                                 }
-                                else break;
-                            }
+                                else
+                                {
+                                    break;
+                                }
 
                             //Удаление всего
                             foreach (var item in ToDelete)
-                            {
                                 if (item.Path.Remove(6) == "%BASE%" && File.Exists(item.Path.Replace("%BASE%", Path)))
-                                {
-                                    DeleteFile(item.Path.Replace("%BASE%", Path));
-                                }
-                            }
+                                    File.Delete(item.Path.Replace("%BASE%", Path));
 
-                            WebClient WC = new WebClient();
+                            var WC = new WebClient();
                             WC.DownloadFileCompleted += WC_DownloadFileCompleted;
                             foreach (var item in ToDownload)
                             {
                                 WC.DownloadFileAsync(new Uri(item.URL), item.Path);
-                                lock(locker){
+                                lock (locker)
+                                {
                                     ActiveDownloadCount++;
                                 }
 
                                 if (item.IsArchive)
                                     ZipArchieves.Add(item);
                             }
+
                             DownLoadsScheduled = true;
                         }
                     }
@@ -144,78 +149,89 @@ namespace SKProCHLauncher
                     }
                 }
                 catch (Exception)
-                {}
+                {
+                }
             }
 
-            private bool DownLoadsScheduled = false;
-            private object locker = new object();
-            private int ActiveDownloadCount = 0;
-            private List<ModpackInfo.Version.Download> ZipArchieves = new List<ModpackInfo.Version.Download>();
-
-            private void WC_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+            private void WC_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
             {
-                lock(locker){
+                lock (locker)
+                {
                     ActiveDownloadCount--;
                 }
+
                 if (ActiveDownloadCount == 0 && DownLoadsScheduled) //Заканчиваем скачивать всё
                 {
-                    foreach (var item in ZipArchieves)//Распаковываем
+                    foreach (var item in ZipArchieves) //Распаковываем
                     {
-                        using (ZipFile zip = ZipFile.Read(item.Path))
+                        using (var zip = ZipFile.Read(item.Path))
                         {
-                            foreach (ZipEntry y in zip)
-                            {
-                                y.Extract(Path);
-                            }
+                            foreach (var y in zip) y.Extract(Path);
                         }
+
                         File.Delete(item.Path);
                     }
+
                     CurrentVersion = NewVersion;
                 }
             }
         }
     }
+
     #endregion
-    
+
     #region ModpackInfo
-    public class ModpackInfo{
+
+    public class ModpackInfo
+    {
+        public ModpackInfo()
+        {
+            Versions = new List<Version>();
+        }
+
         public string ModpackName { get; set; }
         public string ModpackServer { get; set; }
         public string URL { get; set; }
         public string Icon { get; set; }
-        public string MCVersion { get; set; }//Minecraft Version
-        public string ForgeVersion { get; set; }//Forge Version
-        public string ForgeURL { get; set; }//Forge version.json URL
-        
+        public string MCVersion { get; set; } //Minecraft Version
+        public string ForgeVersion { get; set; } //Forge Version
+        public string ForgeURL { get; set; } //Forge version.json URL
+
         public List<Version> Versions { get; set; }
-        public ModpackInfo(){
-            Versions = new List<Version>();
-        }
 
-        public class Version{
-            public string VersionNumber { get; set; }
-
-            public List<Delete> ListToDelete { get; set; }
-            public List<Download> ListToDownload { get; set; }
-            public Version(){
+        public class Version
+        {
+            public Version()
+            {
                 ListToDelete = new List<Delete>();
                 ListToDownload = new List<Download>();
             }
 
-            public class Delete{
+            public string VersionNumber { get; set; }
+
+            public List<Delete> ListToDelete { get; set; }
+            public List<Download> ListToDownload { get; set; }
+
+            public class Delete
+            {
                 public string Path { get; set; }
             }
-            public class Download{
+
+            public class Download
+            {
                 public string Path { get; set; }
                 public string URL { get; set; }
-                public bool IsArchive{ get; set; }
+                public bool IsArchive { get; set; }
             }
         }
     }
+
     #endregion
-    
+
     #region AvailableModpacks
-    public class AvailableModpack{
+
+    public class AvailableModpack
+    {
         public string ID { get; set; }
         public string Name { get; set; }
         public string Icon { get; set; }
@@ -223,6 +239,7 @@ namespace SKProCHLauncher
         public string McVersion { get; set; }
         public string PathToManifest { get; set; }
     }
+
     #endregion
 
     public partial class MainWindow : Window
@@ -232,61 +249,117 @@ namespace SKProCHLauncher
         public static UserConfig CFG;
 
         public static Rectangle CurrentChoosenTab;
+
         public MainWindow()
         {
             #region ProcessingCommandlineArgs
+
             foreach (var item in Environment.GetCommandLineArgs())
-            {
                 if (item.Contains("SKpLauncher:"))
                 {
-                    List<string> temp = JsonConvert.DeserializeObject<List<string>>(item.Replace("SKpLauncher:", ""));
-                    RegistryKey AvailableModpacksRegistry = Registry.LocalMachine;
+                    var temp = JsonConvert.DeserializeObject<List<string>>(item.Replace("SKpLauncher:", ""));
+                    var AvailableModpacksRegistry = Registry.LocalMachine;
                     AvailableModpacksRegistry = AvailableModpacksRegistry.OpenSubKey("SOFTWARE", true);
                     AvailableModpacksRegistry = AvailableModpacksRegistry.CreateSubKey("SKProCHsLauncher", true);
 
-                    List<AvailableModpack> AllAvailableModpacks = JsonConvert.DeserializeObject<List<AvailableModpack>>(Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
+                    var AllAvailableModpacks =
+                        JsonConvert.DeserializeObject<List<AvailableModpack>>(
+                            Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
                     if (AllAvailableModpacks == null)
                         AllAvailableModpacks = new List<AvailableModpack>();
                     foreach (var ManifestsURL in temp)
                     {
-                        ModpackInfo MpInfoToAdd = new ModpackInfo();
+                        var MpInfoToAdd = new ModpackInfo();
                         try
                         {
-                            using (WebClient wc = new WebClient())
+                            using (var wc = new WebClient())
                             {
-                                MpInfoToAdd = JsonConvert.DeserializeObject<ModpackInfo>(wc.DownloadString(ManifestsURL));
+                                MpInfoToAdd =
+                                    JsonConvert.DeserializeObject<ModpackInfo>(wc.DownloadString(ManifestsURL));
                             }
-                            AllAvailableModpacks.Add(new AvailableModpack() { PathToManifest = ManifestsURL, Icon = MpInfoToAdd.Icon, McVersion = MpInfoToAdd.MCVersion, Name = MpInfoToAdd.ModpackName, Server = MpInfoToAdd.ModpackServer, ID = AllAvailableModpacks[AllAvailableModpacks.Count - 1].ID + 1 });
+
+                            AllAvailableModpacks.Add(new AvailableModpack
+                            {
+                                PathToManifest = ManifestsURL, Icon = MpInfoToAdd.Icon,
+                                McVersion = MpInfoToAdd.MCVersion, Name = MpInfoToAdd.ModpackName,
+                                Server = MpInfoToAdd.ModpackServer,
+                                ID = AllAvailableModpacks[AllAvailableModpacks.Count - 1].ID + 1
+                            });
                         }
                         catch (Exception ex)
                         {
                             MessageBox.Show("При добавлении сборки возникла ошибка: " + ex.Message);
                         }
                     }
-                    AvailableModpacksRegistry.SetValue("AvailableModpacks", JsonConvert.SerializeObject(AllAvailableModpacks));
+
+                    AvailableModpacksRegistry.SetValue("AvailableModpacks",
+                        JsonConvert.SerializeObject(AllAvailableModpacks));
                 }
-            }
+
             #endregion
-            
-            RegistryKey registry = Registry.LocalMachine;
+
+            var registry = Registry.LocalMachine;
             registry = registry.OpenSubKey("SOFTWARE", true);
             registry = registry.CreateSubKey("SKProCH's Launcher", true);
-            if (Convert.ToString(registry.GetValue("PATH")) == "" || Convert.ToString(registry.GetValue("PATH")) == null)
+            if (Convert.ToString(registry.GetValue("PATH")) == "" ||
+                Convert.ToString(registry.GetValue("PATH")) == null)
             {
-                registry.SetValue("PATH", System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
+                registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
+
+                var URLHandler = Registry.ClassesRoot;
+                URLHandler = URLHandler.CreateSubKey("skpmclaucnher");
+                URLHandler.SetValue("@", "SKProCH's Launcher - Protocol Handler");
+                URLHandler.SetValue("URL Protocol", "");
+                var iconURLHandler = URLHandler.CreateSubKey("DefaultIcon");
+                iconURLHandler.SetValue("@", Environment.GetCommandLineArgs()[0]);
+                URLHandler = URLHandler.CreateSubKey("shell");
+                URLHandler = URLHandler.CreateSubKey("open");
+                URLHandler = URLHandler.CreateSubKey("command");
+                URLHandler.SetValue("@", Environment.GetCommandLineArgs()[0] + "%1");
+
                 CFG = new UserConfig();
                 registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(CFG));
-            }else if(Convert.ToString(registry.GetValue("PATH")) != System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]))
-            {
-                Process.Start(System.IO.Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
-                Environment.Exit(11);
             }
-            InstallPath = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
+            else if (Convert.ToString(registry.GetValue("PATH")) !=
+                     Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]))
+            {
+                if (File.Exists(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe")))
+                {
+                    Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
+                    Environment.Exit(11);
+                }
+                else
+                {
+                    var result = MessageBox.Show(
+                        "Неведомая сила переместила программу в другую директорию. \nЕсли выберите Да, то мы привяжемся к этой директории. \nЕсли выберете Нет, то мы скачаем последнюю версию в старую директорию",
+                        "Смена директории", MessageBoxButton.YesNo);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
+
+                        var URLHandler = Registry.ClassesRoot;
+                        URLHandler = URLHandler.CreateSubKey("skpmclaucnher");
+                        URLHandler.SetValue("@", "SKProCH's Launcher - Protocol Handler");
+                        URLHandler.SetValue("URL Protocol", "");
+                        var iconURLHandler = URLHandler.CreateSubKey("DefaultIcon");
+                        iconURLHandler.SetValue("@", Environment.GetCommandLineArgs()[0]);
+                        URLHandler = URLHandler.CreateSubKey("shell");
+                        URLHandler = URLHandler.CreateSubKey("open");
+                        URLHandler = URLHandler.CreateSubKey("command");
+                        URLHandler.SetValue("@", Environment.GetCommandLineArgs()[0] + "%1");
+                    }
+                    else if (result == MessageBoxResult.No)
+                    {
+                    }
+                }
+            }
+
+            InstallPath = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
 
             InitializeComponent();
             form = this;
-            
-            IconManager IM = new IconManager();
+
+            var iconManager = new IconManager();
 
             CurrentChoosenTab = ChooseMainModpacks;
             form.Activated += Form_Activated;
@@ -323,29 +396,47 @@ namespace SKProCHLauncher
             MainModpacks.Visibility = Visibility.Collapsed;
             AvailableModpacks.Visibility = Visibility.Visible;
 
-            RegistryKey AvailableModpacksRegistry = Registry.LocalMachine;
+            var AvailableModpacksRegistry = Registry.LocalMachine;
             AvailableModpacksRegistry = AvailableModpacksRegistry.OpenSubKey("SOFTWARE", true);
             AvailableModpacksRegistry = AvailableModpacksRegistry.CreateSubKey("SKProCHsLauncher", true);
 
-            List<AvailableModpack> AllAvailableModpacks = JsonConvert.DeserializeObject<List<AvailableModpack>>(Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
+            var AllAvailableModpacks =
+                JsonConvert.DeserializeObject<List<AvailableModpack>>(
+                    Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
             if (!(AllAvailableModpacks == null || AllAvailableModpacks.Count == 0))
             {
                 NoModpacksAvailable.Visibility = Visibility.Collapsed;
                 LB_AvailableModpacks.Items.Clear();
-                foreach (var item in AllAvailableModpacks)
-                {
-                    LB_AvailableModpacks.Items.Add(item);
-                }
+                foreach (var item in AllAvailableModpacks) LB_AvailableModpacks.Items.Add(item);
             }
             else
             {
                 AllAvailableModpacks = new List<AvailableModpack>();
-                AvailableModpacksRegistry.SetValue("AvailableModpacks", JsonConvert.SerializeObject(AllAvailableModpacks));
+                AvailableModpacksRegistry.SetValue("AvailableModpacks",
+                    JsonConvert.SerializeObject(AllAvailableModpacks));
                 NoModpacksAvailable.Visibility = Visibility.Visible;
             }
         }
 
+        private void LB_MainModpack_Event(object sender, MouseButtonEventArgs e)
+        {
+        }
+
+        private void LB_ExportModpack_Event(object sender, MouseButtonEventArgs e)
+        {
+        }
+
+        private void LB_AvailableModpacks_Event(object sender, MouseButtonEventArgs e)
+        {
+        }
+
+        private void Button_AddModpack_Click(object sender, RoutedEventArgs e)
+        {
+            ChooseAvailableModpacks_Event(form, null);
+        }
+
         #region TabsAnimation
+
         private void Form_Activated(object sender, EventArgs e)
         {
             UpdateChoosenTab(0.00000001);
@@ -353,45 +444,39 @@ namespace SKProCHLauncher
 
         public static void UpdateChoosenTab(double duration)
         {
-            Point relativePoint = CurrentChoosenTab.TransformToAncestor(form)
-                                          .Transform(new Point(0, 0));
-            
-            form.LeftBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X - 25,0,0,0), TimeSpan.FromSeconds(duration)));
-            form.RightBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth, 0, 0, 0), TimeSpan.FromSeconds(duration)));
-            form.LeftFill.BeginAnimation(WidthProperty, new DoubleAnimation(form.LeftFill.ActualWidth, relativePoint.X - 15, TimeSpan.FromSeconds(duration)));
-            form.RightFill.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth + 10, 0, 0, 0), TimeSpan.FromSeconds(duration)));
-            form.DarkBackground.BeginAnimation(WidthProperty, new DoubleAnimation(CurrentChoosenTab.ActualWidth, TimeSpan.FromSeconds(duration)));
-            form.DarkBackground.BeginAnimation(MarginProperty, new ThicknessAnimation(new Thickness(relativePoint.X, 0, 0, 0), TimeSpan.FromSeconds(duration)));
+            var relativePoint = CurrentChoosenTab.TransformToAncestor(form)
+                .Transform(new Point(0, 0));
+
+            form.LeftBackground.BeginAnimation(MarginProperty,
+                new ThicknessAnimation(new Thickness(relativePoint.X - 25, 0, 0, 0), TimeSpan.FromSeconds(duration)));
+            form.RightBackground.BeginAnimation(MarginProperty,
+                new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth, 0, 0, 0),
+                    TimeSpan.FromSeconds(duration)));
+            form.LeftFill.BeginAnimation(WidthProperty,
+                new DoubleAnimation(form.LeftFill.ActualWidth, relativePoint.X - 15, TimeSpan.FromSeconds(duration)));
+            form.RightFill.BeginAnimation(MarginProperty,
+                new ThicknessAnimation(new Thickness(relativePoint.X + CurrentChoosenTab.ActualWidth + 10, 0, 0, 0),
+                    TimeSpan.FromSeconds(duration)));
+            form.DarkBackground.BeginAnimation(WidthProperty,
+                new DoubleAnimation(CurrentChoosenTab.ActualWidth, TimeSpan.FromSeconds(duration)));
+            form.DarkBackground.BeginAnimation(MarginProperty,
+                new ThicknessAnimation(new Thickness(relativePoint.X, 0, 0, 0), TimeSpan.FromSeconds(duration)));
         }
+
         #endregion
-
-        private void LB_MainModpack_Event(object sender, MouseButtonEventArgs e)
-        {
-            
-        }
-
-        private void LB_ExportModpack_Event(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-
-        private void LB_AvailableModpacks_Event(object sender, MouseButtonEventArgs e)
-        {
-            
-        }
     }
 
     public class TopMarginConverter : IValueConverter
     {
         #region IValueConverter Members
 
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            double sliderValue = (double)value;
+            var sliderValue = (double) value;
             return new Thickness(0, sliderValue - 1, 0, 0);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new Exception("The method or operation is not implemented.");
         }

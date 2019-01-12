@@ -15,6 +15,8 @@ using System.Net;
 using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.IO;
+using System.Threading;
+using System.ComponentModel;
 using Path = System.IO.Path;
 using MessageBox = System.Windows.MessageBox;
 
@@ -23,16 +25,112 @@ namespace SKProCHLauncher
     /// <summary>
     /// Логика взаимодействия для IconManager.xaml
     /// </summary>
-    public partial class IconManager : Window
+    public partial class IconManager
     {
         public static IconManager form;
         public IconManager()
         {
             InitializeComponent();
             form = this;
+            this.DataContext = this;
             InitializeIcons();
         }
-        
+
+        #region ImageLoader
+        string _IconPathString = "";
+        ImageLoader Loader = null;
+
+        public BitmapImage IconImageSource
+        {
+            get
+            {
+                if (Loader != null) return Loader.Image;
+                else return null;
+            }
+        }
+
+        string _ImageStatusText = "";
+        public string ImageStatusText
+        {
+            get { return _ImageStatusText; }
+            set
+            {
+                _ImageStatusText = value;
+                OnPropertyChanged("ImageStatusText");
+            }
+        }
+
+        public string IconPathString
+        {
+            get { return _IconPathString; }
+
+            set
+            {
+                try
+                {
+                    if (Loader != null)
+                    {
+                        Loader.LoadCompleted -= ImageLoadCompleted;
+                        Loader = null;
+                    }
+
+                    if (String.IsNullOrEmpty(value))
+                    {
+                        _IconPathString = "";
+                        OnPropertyChanged("IconImageSource");
+                        return;
+                    }
+
+                    Uri uri = new Uri(value);
+                    Loader = new ImageLoader(uri);
+                    Loader.LoadCompleted += ImageLoadCompleted;
+                    Loader.Run();
+                    _IconPathString = value;
+                    ImageStatusText = "Подождите...";
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                    _IconPathString = "";
+                    OnPropertyChanged("IconImageSource");
+                    ImageIsLoaded = false;
+                    CheckInstallAvailable(form, null);
+                }
+            }
+        }
+
+        void ImageLoadCompleted(object sender, EventArgs e)
+        {
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                if ((sender as ImageLoader).Image != null)
+                {
+                    ImageIsLoaded = true;
+                    CheckInstallAvailable(form, null);
+                }
+                else
+                {
+                    _IconPathString = "";
+                    ImageIsLoaded = false;
+                    CheckInstallAvailable(form, null);
+                }
+
+                OnPropertyChanged("IconImageSource");
+                (sender as ImageLoader).LoadCompleted -= ImageLoadCompleted;
+            }));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        void OnPropertyChanged(string name)
+        {
+            var handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(name));
+        }
+
+        private static bool ImageIsLoaded = false;
+
+        #endregion
         #region ListBoxIcons Class
         class ListBoxIcons
         {
@@ -46,11 +144,25 @@ namespace SKProCHLauncher
             AllIcons.Visibility = Visibility.Visible;
             Dictionary<string, string> Default;
             Dictionary<string, string> Custom;
-            using (WebClient wc = new WebClient())
+
+            try
             {
-                string JSON = wc.DownloadString(@"https://gdurl.com/u9FJ");
-                Default = JsonConvert.DeserializeObject<Dictionary<string, string>>(JSON);
+                using (WebClient wc = new WebClient())
+                {
+                    string JSON = wc.DownloadString(@"https://gdurl.com/u9FJ");
+                    Default = JsonConvert.DeserializeObject<Dictionary<string, string>>(JSON);
+                }
             }
+            catch (Exception)
+            {
+                MessageBox.Show("Видимо, нет подключения к базе данных иконок. Скорее всего нет подключения к GoogleDrive или GDURL.");
+                Default = new Dictionary<string, string>() { };
+                foreach (var item in Directory.GetFiles(Path.Combine(MainWindow.InstallPath, @"\Icons\DefaultIcons\")))
+                {
+                    Default.Add(item, Path.GetFileNameWithoutExtension(item));
+                }
+            }
+
             Custom = new Dictionary<string, string>();
 
             if (Directory.Exists(MainWindow.InstallPath + @"\Icons\CustomIcons\"))
@@ -166,12 +278,84 @@ namespace SKProCHLauncher
 
         private void CheckInstallAvailable(object sender, TextChangedEventArgs e)
         {
-            if (IconName.Text != "" && IconPath.Text != "")
+            if (ImageIsLoaded)
             {
-                AddCustomIconButton.IsEnabled = true;
+                if (IconName.Text != "" && IconName.Text != null)
+                {
+                    AddCustomIconButton.IsEnabled = true;
+                }
+                else
+                    AddCustomIconButton.IsEnabled = false;
             }
             else
                 AddCustomIconButton.IsEnabled = false;
+        }
+    }
+
+    public class ImageLoader
+    {
+        Uri _ImageUri;
+        BitmapImage _bi;
+
+        public BitmapImage Image
+        {
+            get { return _bi; }
+        }
+
+        public event EventHandler LoadCompleted;
+
+        void OnLoadCompleted()
+        {
+            if (LoadCompleted != null) LoadCompleted(this, new EventArgs());
+        }
+
+        public ImageLoader(Uri uri)
+        {
+            this._ImageUri = uri;
+        }
+
+        void LoadImage()
+        {
+            BitmapImage bi;
+            try
+            {
+                byte[] data;
+
+                if (_ImageUri.IsFile)
+                {
+                    data = System.IO.File.ReadAllBytes(_ImageUri.LocalPath);
+                }
+                else
+                {
+                    var client = new System.Net.WebClient();
+                    using (client)
+                    {
+                        data = client.DownloadData(_ImageUri);
+                    }
+                }
+
+                var ms = new System.IO.MemoryStream(data);
+
+                bi = new BitmapImage();
+                bi.BeginInit();
+                bi.CacheOption = BitmapCacheOption.OnLoad;
+                bi.StreamSource = ms;
+                bi.EndInit();
+                bi.Freeze();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                bi = null;
+            }
+            this._bi = bi;
+            OnLoadCompleted();
+        }
+
+        public void Run()
+        {
+            Task t = new Task(() => LoadImage());
+            t.Start();
         }
     }
 }
