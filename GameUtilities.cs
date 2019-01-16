@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Windows.Documents;
+using System.Windows.Input;
 using ForgeManifest;
+using MinecraftManifest;
+using MinecraftVersionManifest_NS;
 
 namespace SKProCHLauncher
 {
-    public class MinecraftForgeUtilities
+    public class GameUtilities
     {
-        private string GetForgeVersionManifest(string url = @"http://files.minecraftforge.net/maven/net/minecraftforge/forge/json") {
+        private string GetForgeVersionsManifest(string url = @"http://files.minecraftforge.net/maven/net/minecraftforge/forge/json") {
             try{
                 WebClient wc = new WebClient();
                 return wc.DownloadString(url);
@@ -20,7 +23,7 @@ namespace SKProCHLauncher
 
         public Forge DeserializeForge(string jsonstring = null) {
             if (jsonstring == null){
-                jsonstring = GetForgeVersionManifest();
+                jsonstring = GetForgeVersionsManifest();
             }
             return Forge.FromJson(jsonstring);
         }
@@ -30,7 +33,7 @@ namespace SKProCHLauncher
                 forgemanifest = DeserializeForge();
             }
 
-            if(forgemanifest.Mcversion.ContainsKey(version)){
+            if (forgemanifest.Mcversion.ContainsKey(version)){
                 foreach (var VARIABLE in forgemanifest.Mcversion){
                     if (VARIABLE.Key == version){
                         return VARIABLE.Value;
@@ -43,7 +46,7 @@ namespace SKProCHLauncher
             return null;
         }
 
-        public void GetForgeVersionsByMCVersion(string version, Forge forgemanifest = null) {
+        public List<ForgeManifest.Number> GetForgeVersionsByMCVersion(string version, Forge forgemanifest = null) {
             var ForgeIDs = GetForgeVersionsIDByMCVersion(version, forgemanifest);
             if (forgemanifest == null){
                 forgemanifest = DeserializeForge();
@@ -55,9 +58,62 @@ namespace SKProCHLauncher
                     listtoreturn.Add(number.Value);
                 }
             }
+            return listtoreturn;
         }
 
+        //public string GetForgeManifest(string version) {
 
+        //}
+
+
+
+
+
+
+        public string GetMinecraftVersionsManifest(string url = "https://launchermeta.mojang.com/mc/game/version_manifest.json") {
+            using (WebClient wc = new WebClient()){
+                return wc.DownloadString(url);
+            }
+        }
+
+        public Minecraft GetMinecraftManifest(string rawjson = null) {
+            if (rawjson == null){
+                GetMinecraftVersionsManifest();
+            }
+            return Minecraft.FromJson(rawjson);
+        }
+
+        public MinecraftVersionManifest GetMinecraftVersionManifest(string version, Minecraft mcmanifest = null) {
+            if (mcmanifest == null){
+                mcmanifest = GetMinecraftManifest();
+            }
+            foreach (var VARIABLE in mcmanifest.Versions){
+                if (VARIABLE.Id == version)
+                {
+                    using (WebClient wc = new WebClient()){
+                        return MinecraftVersionManifest.FromJson(wc.DownloadString(VARIABLE.Url));
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string InstallMinecraft(string version, string launcherfolder, Minecraft mcmanifest = null) {
+            if (mcmanifest == null){
+                mcmanifest = GetMinecraftManifest();
+            }
+
+            var manifest = GetMinecraftVersionManifest(version, mcmanifest);
+            if (manifest == null){
+                return "VnE";
+            }
+
+            foreach (var VARIABLE in manifest.Libraries){
+                if (VARIABLE.Downloads){
+                    VARIABLE.Downloads.Classifiers.
+                }
+            }
+        }
     }
 }
 
@@ -631,3 +687,390 @@ namespace ForgeManifest
         public static readonly McversionConverter Singleton = new McversionConverter();
     }
 }
+
+namespace MinecraftManifest
+{
+    using System;
+    using System.Collections.Generic;
+
+    using System.Globalization;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+
+    public partial class Minecraft
+    {
+        [JsonProperty("latest", NullValueHandling = NullValueHandling.Ignore)]
+        public Latest Latest { get; set; }
+
+        [JsonProperty("versions", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Version> Versions { get; set; }
+    }
+
+    public partial class Latest
+    {
+        [JsonProperty("release", NullValueHandling = NullValueHandling.Ignore)]
+        public string Release { get; set; }
+
+        [JsonProperty("snapshot", NullValueHandling = NullValueHandling.Ignore)]
+        public string Snapshot { get; set; }
+    }
+
+    public partial class Version
+    {
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
+        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+        public TypeEnum? Type { get; set; }
+
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+        public Uri Url { get; set; }
+
+        [JsonProperty("time", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? Time { get; set; }
+
+        [JsonProperty("releaseTime", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? ReleaseTime { get; set; }
+    }
+
+    public enum TypeEnum { OldAlpha, OldBeta, Release, Snapshot };
+
+    public partial class Minecraft
+    {
+        public static Minecraft FromJson(string json) => JsonConvert.DeserializeObject<Minecraft>(json, MinecraftManifest.Converter.Settings);
+    }
+
+    public static class Serialize
+    {
+        public static string ToJson(this Minecraft self) => JsonConvert.SerializeObject(self, MinecraftManifest.Converter.Settings);
+    }
+
+    internal static class Converter
+    {
+        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+        {
+            MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
+            DateParseHandling = DateParseHandling.None,
+            Converters =
+            {
+                TypeEnumConverter.Singleton,
+                new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+            },
+        };
+    }
+
+    internal class TypeEnumConverter : JsonConverter
+    {
+        public override bool CanConvert(Type t) => t == typeof(TypeEnum) || t == typeof(TypeEnum?);
+
+        public override object ReadJson(JsonReader reader, Type t, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null) return null;
+            var value = serializer.Deserialize<string>(reader);
+            switch (value)
+            {
+                case "old_alpha":
+                    return TypeEnum.OldAlpha;
+                case "old_beta":
+                    return TypeEnum.OldBeta;
+                case "release":
+                    return TypeEnum.Release;
+                case "snapshot":
+                    return TypeEnum.Snapshot;
+            }
+            throw new Exception("Cannot unmarshal type TypeEnum");
+        }
+
+        public override void WriteJson(JsonWriter writer, object untypedValue, JsonSerializer serializer)
+        {
+            if (untypedValue == null)
+            {
+                serializer.Serialize(writer, null);
+                return;
+            }
+            var value = (TypeEnum)untypedValue;
+            switch (value)
+            {
+                case TypeEnum.OldAlpha:
+                    serializer.Serialize(writer, "old_alpha");
+                    return;
+                case TypeEnum.OldBeta:
+                    serializer.Serialize(writer, "old_beta");
+                    return;
+                case TypeEnum.Release:
+                    serializer.Serialize(writer, "release");
+                    return;
+                case TypeEnum.Snapshot:
+                    serializer.Serialize(writer, "snapshot");
+                    return;
+            }
+            throw new Exception("Cannot marshal type TypeEnum");
+        }
+
+        public static readonly TypeEnumConverter Singleton = new TypeEnumConverter();
+    }
+}
+
+namespace MinecraftVersionManifest_NS
+{
+    using System;
+    using System.Collections.Generic;
+
+    using System.Globalization;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+
+    public partial class MinecraftVersionManifest
+    {
+        [JsonProperty("assetIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public AssetIndex AssetIndex { get; set; }
+
+        [JsonProperty("assets", NullValueHandling = NullValueHandling.Ignore)]
+        public string Assets { get; set; }
+
+        [JsonProperty("downloads", NullValueHandling = NullValueHandling.Ignore)]
+        public MinecraftVersionManifestDownloads Downloads { get; set; }
+
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
+        [JsonProperty("libraries", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Library> Libraries { get; set; }
+
+        [JsonProperty("logging", NullValueHandling = NullValueHandling.Ignore)]
+        public Logging Logging { get; set; }
+
+        [JsonProperty("mainClass", NullValueHandling = NullValueHandling.Ignore)]
+        public string MainClass { get; set; }
+
+        [JsonProperty("minecraftArguments", NullValueHandling = NullValueHandling.Ignore)]
+        public string MinecraftArguments { get; set; }
+
+        [JsonProperty("minimumLauncherVersion", NullValueHandling = NullValueHandling.Ignore)]
+        public long? MinimumLauncherVersion { get; set; }
+
+        [JsonProperty("releaseTime", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? ReleaseTime { get; set; }
+
+        [JsonProperty("time", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? Time { get; set; }
+
+        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+        public string Type { get; set; }
+    }
+
+    public partial class AssetIndex
+    {
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
+        [JsonProperty("sha1", NullValueHandling = NullValueHandling.Ignore)]
+        public string Sha1 { get; set; }
+
+        [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
+        public long? Size { get; set; }
+
+        [JsonProperty("totalSize", NullValueHandling = NullValueHandling.Ignore)]
+        public long? TotalSize { get; set; }
+
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+        public Uri Url { get; set; }
+    }
+
+    public partial class MinecraftVersionManifestDownloads
+    {
+        [JsonProperty("client", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass Client { get; set; }
+
+        [JsonProperty("server", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass Server { get; set; }
+
+        [JsonProperty("windows_server", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass WindowsServer { get; set; }
+    }
+
+    public partial class ServerClass
+    {
+        [JsonProperty("sha1", NullValueHandling = NullValueHandling.Ignore)]
+        public string Sha1 { get; set; }
+
+        [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
+        public long? Size { get; set; }
+
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+        public Uri Url { get; set; }
+
+        [JsonProperty("path", NullValueHandling = NullValueHandling.Ignore)]
+        public string Path { get; set; }
+    }
+
+    public partial class Library
+    {
+        [JsonProperty("downloads", NullValueHandling = NullValueHandling.Ignore)]
+        public LibraryDownloads Downloads { get; set; }
+
+        [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [JsonProperty("extract", NullValueHandling = NullValueHandling.Ignore)]
+        public Extract Extract { get; set; }
+
+        [JsonProperty("natives", NullValueHandling = NullValueHandling.Ignore)]
+        public Natives Natives { get; set; }
+
+        [JsonProperty("rules", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Rule> Rules { get; set; }
+    }
+
+    public partial class LibraryDownloads
+    {
+        [JsonProperty("artifact", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass Artifact { get; set; }
+
+        [JsonProperty("classifiers", NullValueHandling = NullValueHandling.Ignore)]
+        public Classifiers Classifiers { get; set; }
+    }
+
+    public partial class Classifiers
+    {
+        [JsonProperty("natives-linux", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass NativesLinux { get; set; }
+
+        [JsonProperty("natives-osx", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass NativesOsx { get; set; }
+
+        [JsonProperty("natives-windows", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass NativesWindows { get; set; }
+
+        [JsonProperty("natives-windows-32", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass NativesWindows32 { get; set; }
+
+        [JsonProperty("natives-windows-64", NullValueHandling = NullValueHandling.Ignore)]
+        public ServerClass NativesWindows64 { get; set; }
+    }
+
+    public partial class Extract
+    {
+        [JsonProperty("exclude", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> Exclude { get; set; }
+    }
+
+    public partial class Natives
+    {
+        [JsonProperty("linux", NullValueHandling = NullValueHandling.Ignore)]
+        public string Linux { get; set; }
+
+        [JsonProperty("osx", NullValueHandling = NullValueHandling.Ignore)]
+        public string Osx { get; set; }
+
+        [JsonProperty("windows", NullValueHandling = NullValueHandling.Ignore)]
+        public string Windows { get; set; }
+    }
+
+    public partial class Rule
+    {
+        [JsonProperty("action", NullValueHandling = NullValueHandling.Ignore)]
+        public string Action { get; set; }
+
+        [JsonProperty("os", NullValueHandling = NullValueHandling.Ignore)]
+        public Os Os { get; set; }
+    }
+
+    public partial class Os
+    {
+        [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+        public string Name { get; set; }
+    }
+
+    public partial class Logging
+    {
+        [JsonProperty("client", NullValueHandling = NullValueHandling.Ignore)]
+        public LoggingClient Client { get; set; }
+    }
+
+    public partial class LoggingClient
+    {
+        [JsonProperty("argument", NullValueHandling = NullValueHandling.Ignore)]
+        public string Argument { get; set; }
+
+        [JsonProperty("file", NullValueHandling = NullValueHandling.Ignore)]
+        public AssetIndex File { get; set; }
+
+        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+        public string Type { get; set; }
+    }
+
+    public partial class MinecraftVersionManifest
+    {
+        public static MinecraftVersionManifest FromJson(string json) => JsonConvert.DeserializeObject<MinecraftVersionManifest>(json, MinecraftVersionManifest_NS.Converter.Settings);
+    }
+
+    public static class Serialize
+    {
+        public static string ToJson(this MinecraftVersionManifest self) => JsonConvert.SerializeObject(self, MinecraftVersionManifest_NS.Converter.Settings);
+    }
+
+    internal static class Converter
+    {
+        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+        {
+            MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
+            DateParseHandling = DateParseHandling.None,
+            Converters =
+            {
+                new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+            },
+        };
+    }
+}
+
+namespace MinecraftAssetsManifest
+{
+    using System;
+    using System.Collections.Generic;
+
+    using System.Globalization;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+
+    public partial class AssetsManifest
+    {
+        [JsonProperty("objects", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, Object> Objects { get; set; }
+    }
+
+    public partial class Object
+    {
+        [JsonProperty("hash", NullValueHandling = NullValueHandling.Ignore)]
+        public string Hash { get; set; }
+
+        [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
+        public long? Size { get; set; }
+    }
+
+    public partial class AssetsManifest
+    {
+        public static AssetsManifest FromJson(string json) => JsonConvert.DeserializeObject<AssetsManifest>(json, MinecraftManifest.Converter.Settings);
+    }
+
+    public static class Serialize
+    {
+        public static string ToJson(this AssetsManifest self) => JsonConvert.SerializeObject(self, MinecraftManifest.Converter.Settings);
+    }
+
+    internal static class Converter
+    {
+        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+                                                                 {
+                                                                     MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
+                                                                     DateParseHandling        = DateParseHandling.None,
+                                                                     Converters =
+                                                                     {
+                                                                         new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+                                                                     },
+                                                                 };
+    }
+}
+
+
+
