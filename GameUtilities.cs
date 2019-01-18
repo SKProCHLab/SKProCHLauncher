@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Documents;
 using System.Windows.Input;
 using ForgeManifest;
-using MinecraftManifest;
-using MinecraftVersionManifest_NS;
+using MinecraftAssetsManifest;
+using GlobalMinecraftVersionsNamespace;
+using SpecificMinecraftVersionManifest;
 
 namespace SKProCHLauncher
 {
@@ -76,14 +80,14 @@ namespace SKProCHLauncher
             }
         }
 
-        public Minecraft GetMinecraftManifest(string rawjson = null) {
+        public GlobalMinecraftVersions GetMinecraftManifest(string rawjson = null) {
             if (rawjson == null){
                 GetMinecraftVersionsManifest();
             }
-            return Minecraft.FromJson(rawjson);
+            return GlobalMinecraftVersions.FromJson(rawjson);
         }
 
-        public MinecraftVersionManifest GetMinecraftVersionManifest(string version, Minecraft mcmanifest = null) {
+        public SpecificMinecraftVersion GetMinecraftVersionManifest(string version, GlobalMinecraftVersions mcmanifest = null) {
             if (mcmanifest == null){
                 mcmanifest = GetMinecraftManifest();
             }
@@ -91,28 +95,109 @@ namespace SKProCHLauncher
                 if (VARIABLE.Id == version)
                 {
                     using (WebClient wc = new WebClient()){
-                        return MinecraftVersionManifest.FromJson(wc.DownloadString(VARIABLE.Url));
+                        return SpecificMinecraftVersion.FromJson(wc.DownloadString(VARIABLE.Url));
                     }
                 }
             }
             return null;
         }
 
-        public string InstallMinecraft(string version, string launcherfolder, Minecraft mcmanifest = null) {
+        public void InstallMinecraft(string version, string launcherfolder, bool hardupdate = false, GlobalMinecraftVersions mcmanifest = null) {
             if (mcmanifest == null){
                 mcmanifest = GetMinecraftManifest();
             }
 
             var manifest = GetMinecraftVersionManifest(version, mcmanifest);
             if (manifest == null){
-                return "VnE";
+                return;
             }
 
             foreach (var VARIABLE in manifest.Libraries){
-                if (VARIABLE.Downloads){
-                    VARIABLE.Downloads.Classifiers.
+                string url = @"https://libraries.minecraft.net/";
+                if (VARIABLE.Downloads.Artifact != null){
+                    using (WebClient wc = new WebClient()){
+                        if (hardupdate){
+                            wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                        }
+                        else{
+                            if (File.Exists(Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path))){
+                                using (FileStream fs = new FileStream(Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path), FileMode.Open)){
+                                    using (BufferedStream bs = new BufferedStream(fs)){
+                                        using (SHA1Managed sha1 = new SHA1Managed()){
+                                            byte[]        hash      = sha1.ComputeHash(bs);
+                                            StringBuilder formatted = new StringBuilder(2 * hash.Length);
+                                            foreach (byte b in hash){
+                                                formatted.AppendFormat("{0:X2}", b);
+                                            }
+                                            if (formatted.ToString() != VARIABLE.Downloads.Artifact.Sha1){
+                                                wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else{
+                                wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                            }
+                        }
+                    }
+                }
+                else{
+                    bool IsDownloaded = true;
+                    if (VARIABLE.Rules != null){
+                        if (VARIABLE.Rules[0].Os == null && VARIABLE.Rules[0].Action == "disallow"){
+                            IsDownloaded = false;
+                            foreach (var VARIABLE1 in VARIABLE.Rules)
+                            {
+                                if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "allow"){
+                                    IsDownloaded = true;
+                                }
+                            }
+                        }
+                        else{
+                            foreach (var VARIABLE1 in VARIABLE.Rules)
+                            {
+                                if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "disallow")
+                                {
+                                    IsDownloaded = false;
+                                }
+                            }
+                        }
+                    }
+
+                    if (IsDownloaded){
+                        using (WebClient wc = new WebClient())
+                        {
+                            if (VARIABLE.Downloads.Classifiers.NativesWindows64 != null && Environment.Is64BitOperatingSystem)
+                            {
+                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows64.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                            }
+                            else if (VARIABLE.Downloads.Classifiers.NativesWindows32 != null && !Environment.Is64BitOperatingSystem)
+                            {
+                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows32.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                            }
+                            else{
+                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                            }
+                        }
+                    }
                 }
             }
+
+            WebClient wc1 = new WebClient();
+            var assets = AssetsManifest.FromJson(wc1.DownloadString(manifest.AssetIndex.Url));
+            wc1.Dispose();
+            foreach (var OBJECT in assets.Objects){
+                var item = OBJECT.Value.Hash;
+                using (WebClient webclient = new WebClient()){
+                    webclient.DownloadFile(@"http://resources.download.minecraft.net/" + item.Remove(2) + @"/" + item,
+                        Path.Combine(launcherfolder, "/assets/objects/", item.Remove(2) + @"/" + item));
+                }
+            }
+
+
+
+
         }
     }
 }
@@ -688,7 +773,7 @@ namespace ForgeManifest
     }
 }
 
-namespace MinecraftManifest
+namespace GlobalMinecraftVersionsNamespace
 {
     using System;
     using System.Collections.Generic;
@@ -697,7 +782,7 @@ namespace MinecraftManifest
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
-    public partial class Minecraft
+    public partial class GlobalMinecraftVersions
     {
         [JsonProperty("latest", NullValueHandling = NullValueHandling.Ignore)]
         public Latest Latest { get; set; }
@@ -735,14 +820,14 @@ namespace MinecraftManifest
 
     public enum TypeEnum { OldAlpha, OldBeta, Release, Snapshot };
 
-    public partial class Minecraft
+    public partial class GlobalMinecraftVersions
     {
-        public static Minecraft FromJson(string json) => JsonConvert.DeserializeObject<Minecraft>(json, MinecraftManifest.Converter.Settings);
+        public static GlobalMinecraftVersions FromJson(string json) => JsonConvert.DeserializeObject<GlobalMinecraftVersions>(json, GlobalMinecraftVersionsNamespace.Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this Minecraft self) => JsonConvert.SerializeObject(self, MinecraftManifest.Converter.Settings);
+        public static string ToJson(this GlobalMinecraftVersions self) => JsonConvert.SerializeObject(self, GlobalMinecraftVersionsNamespace.Converter.Settings);
     }
 
     internal static class Converter
@@ -811,7 +896,7 @@ namespace MinecraftManifest
     }
 }
 
-namespace MinecraftVersionManifest_NS
+namespace SpecificMinecraftVersionManifest
 {
     using System;
     using System.Collections.Generic;
@@ -820,7 +905,7 @@ namespace MinecraftVersionManifest_NS
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
 
-    public partial class MinecraftVersionManifest
+    public partial class SpecificMinecraftVersion
     {
         [JsonProperty("assetIndex", NullValueHandling = NullValueHandling.Ignore)]
         public AssetIndex AssetIndex { get; set; }
@@ -829,7 +914,7 @@ namespace MinecraftVersionManifest_NS
         public string Assets { get; set; }
 
         [JsonProperty("downloads", NullValueHandling = NullValueHandling.Ignore)]
-        public MinecraftVersionManifestDownloads Downloads { get; set; }
+        public SpecificMinecraftVersionDownloads Downloads { get; set; }
 
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
@@ -877,7 +962,7 @@ namespace MinecraftVersionManifest_NS
         public Uri Url { get; set; }
     }
 
-    public partial class MinecraftVersionManifestDownloads
+    public partial class SpecificMinecraftVersionDownloads
     {
         [JsonProperty("client", NullValueHandling = NullValueHandling.Ignore)]
         public ServerClass Client { get; set; }
@@ -1000,14 +1085,14 @@ namespace MinecraftVersionManifest_NS
         public string Type { get; set; }
     }
 
-    public partial class MinecraftVersionManifest
+    public partial class SpecificMinecraftVersion
     {
-        public static MinecraftVersionManifest FromJson(string json) => JsonConvert.DeserializeObject<MinecraftVersionManifest>(json, MinecraftVersionManifest_NS.Converter.Settings);
+        public static SpecificMinecraftVersion FromJson(string json) => JsonConvert.DeserializeObject<SpecificMinecraftVersion>(json, SpecificMinecraftVersionManifest.Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this MinecraftVersionManifest self) => JsonConvert.SerializeObject(self, MinecraftVersionManifest_NS.Converter.Settings);
+        public static string ToJson(this SpecificMinecraftVersion self) => JsonConvert.SerializeObject(self, SpecificMinecraftVersionManifest.Converter.Settings);
     }
 
     internal static class Converter
@@ -1050,12 +1135,12 @@ namespace MinecraftAssetsManifest
 
     public partial class AssetsManifest
     {
-        public static AssetsManifest FromJson(string json) => JsonConvert.DeserializeObject<AssetsManifest>(json, MinecraftManifest.Converter.Settings);
+        public static AssetsManifest FromJson(string json) => JsonConvert.DeserializeObject<AssetsManifest>(json, Converter.Settings);
     }
 
     public static class Serialize
     {
-        public static string ToJson(this AssetsManifest self) => JsonConvert.SerializeObject(self, MinecraftManifest.Converter.Settings);
+        public static string ToJson(this AssetsManifest self) => JsonConvert.SerializeObject(self, Converter.Settings);
     }
 
     internal static class Converter
