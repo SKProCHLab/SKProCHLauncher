@@ -206,40 +206,20 @@ namespace SKProCHLauncher
                 }
                 else{
                     wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
-
                 }
 
             } //If Classifiers - download and unzip 
             else{
-                bool IsDownloaded = true;
-                if (lib.Rules != null){
-                    if (lib.Rules[0].Os == null && lib.Rules[0].Action == "disallow"){
-                        IsDownloaded = false;
-                        foreach (var VARIABLE1 in lib.Rules){
-                            if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "allow"){
-                                IsDownloaded = true;
-                            }
-                        }
-                    }
-                    else{
-                        foreach (var VARIABLE1 in lib.Rules){
-                            if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "disallow"){
-                                IsDownloaded = false;
-                            }
-                        }
-                    }
-                }
+                //Launcher is only on Windows - we dont check other platfors
+                var Is64BitOS = Environment.Is64BitOperatingSystem;
 
-                if (IsDownloaded){
-                    if (lib.Downloads.Classifiers.NativesWindows64 != null && Environment.Is64BitOperatingSystem){
-                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows64.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
-                    }
-                    else if (lib.Downloads.Classifiers.NativesWindows32 != null && !Environment.Is64BitOperatingSystem){
-                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows32.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
-                    }
-                    else{
-                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
-                    }
+                if (Is64BitOS? lib.Downloads.Classifiers.NativesWindows64 != null : lib.Downloads.Classifiers.NativesWindows32 != null)
+                {
+                    wc.DownloadFile(Is64BitOS ? lib.Downloads.Classifiers.NativesWindows64.Url: lib.Downloads.Classifiers.NativesWindows32.Url, Path.Combine(launcherfolder, @"/libraries/", Is64BitOS ? lib.Downloads.Classifiers.NativesWindows64.Path : lib.Downloads.Classifiers.NativesWindows32.Path));
+                }
+                else if (lib.Downloads.Classifiers.NativesWindows != null)
+                {
+                    wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
                 }
             }
         }
