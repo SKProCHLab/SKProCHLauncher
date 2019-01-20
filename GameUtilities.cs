@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Input;
 using ForgeManifest;
@@ -92,8 +93,7 @@ namespace SKProCHLauncher
                 mcmanifest = GetMinecraftManifest();
             }
             foreach (var VARIABLE in mcmanifest.Versions){
-                if (VARIABLE.Id == version)
-                {
+                if (VARIABLE.Id == version){
                     using (WebClient wc = new WebClient()){
                         return SpecificMinecraftVersion.FromJson(wc.DownloadString(VARIABLE.Url));
                     }
@@ -112,92 +112,136 @@ namespace SKProCHLauncher
                 return;
             }
 
-            foreach (var VARIABLE in manifest.Libraries){
-                string url = @"https://libraries.minecraft.net/";
-                if (VARIABLE.Downloads.Artifact != null){
-                    using (WebClient wc = new WebClient()){
-                        if (hardupdate){
-                            wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
-                        }
-                        else{
-                            if (File.Exists(Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path))){
-                                using (FileStream fs = new FileStream(Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path), FileMode.Open)){
-                                    using (BufferedStream bs = new BufferedStream(fs)){
-                                        using (SHA1Managed sha1 = new SHA1Managed()){
-                                            byte[]        hash      = sha1.ComputeHash(bs);
-                                            StringBuilder formatted = new StringBuilder(2 * hash.Length);
-                                            foreach (byte b in hash){
-                                                formatted.AppendFormat("{0:X2}", b);
-                                            }
-                                            if (formatted.ToString() != VARIABLE.Downloads.Artifact.Sha1){
-                                                wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
-                                            }
-                                        }
-                                    }
-                                }
+            //Async download libraries
+            Task[] LibrariesDownloadTasks = new Task[manifest.Libraries.Count];
+            for (int i = 0; i < manifest.Libraries.Count; i++){
+                LibrariesDownloadTasks[i] = new Task(() => DownloadLibrary(manifest.Libraries[i], hardupdate, launcherfolder));
+                LibrariesDownloadTasks[i].Start();
+            }
+
+
+            //Download assetsindexes
+            AssetsManifest assets;
+            using (WebClient wc = new WebClient())
+            {
+                assets = AssetsManifest.FromJson(wc.DownloadString(manifest.AssetIndex.Url));
+            }
+
+            //Async download assets
+            Task[] AssetsDownloadTasks = new Task[assets.Objects.Count];
+            int tempcounter = 0;
+            foreach (var assetsObject in assets.Objects){
+                AssetsDownloadTasks[tempcounter] = new Task(() => DownloadAssets(assetsObject.Value.Hash, hardupdate, launcherfolder));
+                AssetsDownloadTasks[tempcounter].Start();
+                tempcounter++;
+            }
+
+            //Waiting for download complete
+            Task.WaitAll(AssetsDownloadTasks);
+            Task.WaitAll(LibrariesDownloadTasks);
+        }
+
+        private void DownloadAssets(string hash, bool hardupdate, string launcherfolder) {
+            bool IsNeedDownload = false;
+            if (hardupdate){
+                IsNeedDownload = true;
+            }
+            else if(File.Exists(Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash))){
+                using (FileStream fs = new FileStream(Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash), FileMode.Open))
+                {
+                    using (BufferedStream bs = new BufferedStream(fs))
+                    {
+                        using (SHA1Managed sha1 = new SHA1Managed())
+                        {
+                            byte[]        filehash      = sha1.ComputeHash(bs);
+                            StringBuilder formatted = new StringBuilder(2 * filehash.Length);
+                            foreach (byte b in hash)
+                            {
+                                formatted.AppendFormat("{0:X2}", b);
                             }
-                            else{
-                                wc.DownloadFile(VARIABLE.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                            if (formatted.ToString() != hash)
+                            {
+                                IsNeedDownload = true;
+                            }
+                        }
+                    }
+                }
+            }
+            else{
+                IsNeedDownload = true;
+            }
+
+            if (IsNeedDownload)
+            {
+                using (WebClient wc = new WebClient())
+                {
+                    wc.DownloadFile(@"http://resources.download.minecraft.net/" + hash.Remove(2) + @"/" + hash,
+                                           Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash));
+                }
+            }
+        }
+
+        private void DownloadLibrary(Library lib, bool hardupdate, string launcherfolder) {
+            WebClient wc = new WebClient();
+            //If Artifact - simple download, not unzip to binaries
+            if (lib.Downloads.Artifact != null){
+                if (hardupdate){
+                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                }
+                else if (File.Exists(Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path))){
+                    using (FileStream fs = new FileStream(Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path), FileMode.Open)){
+                        using (BufferedStream bs = new BufferedStream(fs)){
+                            using (SHA1Managed sha1 = new SHA1Managed()){
+                                byte[]        hash      = sha1.ComputeHash(bs);
+                                StringBuilder formatted = new StringBuilder(2 * hash.Length);
+                                foreach (byte b in hash){
+                                    formatted.AppendFormat("{0:X2}", b);
+                                }
+                                if (formatted.ToString() != lib.Downloads.Artifact.Sha1){
+                                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                                }
                             }
                         }
                     }
                 }
                 else{
-                    bool IsDownloaded = true;
-                    if (VARIABLE.Rules != null){
-                        if (VARIABLE.Rules[0].Os == null && VARIABLE.Rules[0].Action == "disallow"){
-                            IsDownloaded = false;
-                            foreach (var VARIABLE1 in VARIABLE.Rules)
-                            {
-                                if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "allow"){
-                                    IsDownloaded = true;
-                                }
-                            }
-                        }
-                        else{
-                            foreach (var VARIABLE1 in VARIABLE.Rules)
-                            {
-                                if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "disallow")
-                                {
-                                    IsDownloaded = false;
-                                }
+                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+
+                }
+
+            } //If Classifiers - download and unzip 
+            else{
+                bool IsDownloaded = true;
+                if (lib.Rules != null){
+                    if (lib.Rules[0].Os == null && lib.Rules[0].Action == "disallow"){
+                        IsDownloaded = false;
+                        foreach (var VARIABLE1 in lib.Rules){
+                            if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "allow"){
+                                IsDownloaded = true;
                             }
                         }
                     }
-
-                    if (IsDownloaded){
-                        using (WebClient wc = new WebClient())
-                        {
-                            if (VARIABLE.Downloads.Classifiers.NativesWindows64 != null && Environment.Is64BitOperatingSystem)
-                            {
-                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows64.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
-                            }
-                            else if (VARIABLE.Downloads.Classifiers.NativesWindows32 != null && !Environment.Is64BitOperatingSystem)
-                            {
-                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows32.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
-                            }
-                            else{
-                                wc.DownloadFile(VARIABLE.Downloads.Classifiers.NativesWindows.Url, Path.Combine(launcherfolder, @"/libraries/", VARIABLE.Downloads.Artifact.Path));
+                    else{
+                        foreach (var VARIABLE1 in lib.Rules){
+                            if (VARIABLE1.Os.Name == "windows" && VARIABLE1.Action == "disallow"){
+                                IsDownloaded = false;
                             }
                         }
                     }
                 }
-            }
 
-            WebClient wc1 = new WebClient();
-            var assets = AssetsManifest.FromJson(wc1.DownloadString(manifest.AssetIndex.Url));
-            wc1.Dispose();
-            foreach (var OBJECT in assets.Objects){
-                var item = OBJECT.Value.Hash;
-                using (WebClient webclient = new WebClient()){
-                    webclient.DownloadFile(@"http://resources.download.minecraft.net/" + item.Remove(2) + @"/" + item,
-                        Path.Combine(launcherfolder, "/assets/objects/", item.Remove(2) + @"/" + item));
+                if (IsDownloaded){
+                    if (lib.Downloads.Classifiers.NativesWindows64 != null && Environment.Is64BitOperatingSystem){
+                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows64.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    }
+                    else if (lib.Downloads.Classifiers.NativesWindows32 != null && !Environment.Is64BitOperatingSystem){
+                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows32.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    }
+                    else{
+                        wc.DownloadFile(lib.Downloads.Classifiers.NativesWindows.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    }
                 }
             }
-
-
-
-
         }
     }
 }
