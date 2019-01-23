@@ -102,14 +102,50 @@ namespace SKProCHLauncher
             return null;
         }
 
-        public void InstallMinecraft(string version, string launcherfolder, bool hardupdate = false, GlobalMinecraftVersions mcmanifest = null) {
+        public class InstallMinecraftResults
+        {
+            public bool WrongManifest = false;
+            //Lib
+            public List<string>               LibSucces = new List<string>();
+            public List<string>               LibUpdate = new List<string>();
+            public Dictionary<string, string> LibFail   = new Dictionary<string, string>();
+
+            //Assets 
+            public List<string>               AssetsSucces = new List<string>();
+            public List<string>               AssetsUpdate = new List<string>();
+            public Dictionary<string, string> AssetsFail   = new Dictionary<string, string>();
+        }
+
+        //Some shit code!
+        private static bool IsRunning = false;
+        private static InstallMinecraftResults ToReturn;
+        private static object ForLock;
+
+
+        private InstallMinecraftResults InstallMinecraft(string version, string launcherfolder, bool hardupdate = false, GlobalMinecraftVersions mcmanifest = null) {
+            while (true){
+                lock (ForLock){
+                    if (!IsRunning){
+                        IsRunning = true;
+                        break;
+                    }
+                    Task.Delay(TimeSpan.FromSeconds(5));
+                }
+            }
+            Task.Delay(TimeSpan.FromSeconds(1));
+            ToReturn = new InstallMinecraftResults();
+
             if (mcmanifest == null){
                 mcmanifest = GetMinecraftManifest();
             }
 
             var manifest = GetMinecraftVersionManifest(version, mcmanifest);
             if (manifest == null){
-                return;
+                lock (ForLock)
+                {
+                    IsRunning = false;
+                }
+                return new InstallMinecraftResults(){ WrongManifest = true};
             }
 
             //Async download libraries
@@ -139,10 +175,14 @@ namespace SKProCHLauncher
             //Waiting for download complete
             Task.WaitAll(AssetsDownloadTasks);
             Task.WaitAll(LibrariesDownloadTasks);
+            lock (ForLock){
+                IsRunning = false;
+            }
+            return ToReturn;
         }
 
         private void DownloadAssets(string hash, bool hardupdate, string launcherfolder) {
-            bool IsNeedDownload = false;
+            bool IsNeedDownload = true;
             if (hardupdate){
                 IsNeedDownload = true;
             }
@@ -184,28 +224,47 @@ namespace SKProCHLauncher
         private void DownloadLibrary(Library lib, bool hardupdate, string launcherfolder) {
             WebClient wc = new WebClient();
             //If Artifact - simple download, not unzip to binaries
+            bool IsNeedDownload = true;
             if (lib.Downloads.Artifact != null){
                 if (hardupdate){
-                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    IsNeedDownload = true;
                 }
                 else if (File.Exists(Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path))){
-                    using (FileStream fs = new FileStream(Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path), FileMode.Open)){
-                        using (BufferedStream bs = new BufferedStream(fs)){
-                            using (SHA1Managed sha1 = new SHA1Managed()){
-                                byte[]        hash      = sha1.ComputeHash(bs);
-                                StringBuilder formatted = new StringBuilder(2 * hash.Length);
-                                foreach (byte b in hash){
-                                    formatted.AppendFormat("{0:X2}", b);
-                                }
-                                if (formatted.ToString() != lib.Downloads.Artifact.Sha1){
-                                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    try{
+                        using (FileStream fs = new FileStream(Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path), FileMode.Open)){
+                            using (BufferedStream bs = new BufferedStream(fs)){
+                                using (SHA1Managed sha1 = new SHA1Managed()){
+                                    byte[]        hash      = sha1.ComputeHash(bs);
+                                    StringBuilder formatted = new StringBuilder(2 * hash.Length);
+                                    foreach (byte b in hash){
+                                        formatted.AppendFormat("{0:X2}", b);
+                                    }
+                                    IsNeedDownload = formatted.ToString() != lib.Downloads.Artifact.Sha1;
                                 }
                             }
                         }
                     }
+                    catch (Exception e){
+                        IsNeedDownload = true;
+                    }
+
                 }
                 else{
-                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+                    IsNeedDownload = true;
+                }
+
+                if (IsNeedDownload){
+
+                    try{
+                        wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
+
+                    }
+                    catch (Exception){
+                        
+                    }
+                }
+                else{
+                    
                 }
 
             } //If Classifiers - download and unzip 
