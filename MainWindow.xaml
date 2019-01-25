@@ -11,7 +11,7 @@
         TextElement.FontWeight="Medium"
         TextElement.FontSize="14"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
-        Title="SKProCH's Launcher" Height="450" Width="800" ResizeMode="NoResize">
+        Title="SKProCH's Launcher" Height="450" Width="800" ResizeMode="NoResize" Loaded="Window_Loaded">
     <Grid>
         <Grid.Resources>
             <local:TopMarginConverter x:Key="TopMarginConverter" />
