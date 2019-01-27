@@ -33,63 +33,14 @@ namespace SKProCHLauncher
         private static Rectangle _сurrentChoosenTab;
 
         public MainWindow() {
-
-            #region ReadConfigFromRegistry
-
-            var registry = Registry.LocalMachine;
-            registry = registry.OpenSubKey("SOFTWARE", true);
-            registry = registry.CreateSubKey("SKProCH's Launcher", true);
-            if (Convert.ToString(registry.GetValue("PATH")) == ""){
-                registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
-
-                SetURLProcessing();
-
-                CFG = new UserConfig();
-                registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(CFG));
-            }
-            else if (Convert.ToString(registry.GetValue("PATH")) != Path.GetDirectoryName(Environment.GetCommandLineArgs()[0])){
-                if (File.Exists(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"))){
-                    Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
-                    Environment.Exit(11);
-                }
-                else{
-                    var result = MessageBox.Show(
-                                                 "Неведомая сила переместила программу в другую директорию. \nЕсли выберите Да, то мы привяжемся к этой директории. \nЕсли выберете Нет, то мы скачаем последнюю версию в старую директорию",
-                                                 "Смена директории", MessageBoxButton.YesNo);
-                    if (result == MessageBoxResult.Yes){
-                        registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
-                        SetURLProcessing();
-                    }
-                    else if (result == MessageBoxResult.No){
-                        //
-                    }
-                }
-            }
-
-                #endregion
-
-            InstallPath = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
-
             InitializeComponent();
             form = this;
+            this.DataContext = this;
 
             var iconManager = new IconManager();
 
             _сurrentChoosenTab =  ChooseMainModpacks;
             form.Activated     += Form_Activated;
-        }
-
-        private static void SetURLProcessing() {
-            var URLHandler = Registry.ClassesRoot;
-            URLHandler = URLHandler.CreateSubKey("skpmclaucnher");
-            URLHandler.SetValue("",             "SKProCH's Launcher");
-            URLHandler.SetValue("URL Protocol", "");
-            var iconURLHandler = URLHandler.CreateSubKey("DefaultIcon");
-            iconURLHandler.SetValue("", Environment.GetCommandLineArgs()[0]);
-            URLHandler = URLHandler.CreateSubKey("shell");
-            URLHandler = URLHandler.CreateSubKey("open");
-            URLHandler = URLHandler.CreateSubKey("command");
-            URLHandler.SetValue("", '"' + Environment.GetCommandLineArgs()[0] + '"' + " " + '"' + "%1" + '"');
         }
 
         private void Button_Folder_Click(object sender, RoutedEventArgs e) {

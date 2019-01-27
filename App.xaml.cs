@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -77,6 +78,48 @@ namespace SKProCHLauncher
             if (IsNotExisted){
                 var application = new App();
                 application.InitializeComponent();
+
+                #region ReadConfigFromRegistry
+
+                var registry = Registry.LocalMachine;
+                registry = registry.OpenSubKey("SOFTWARE", true);
+                registry = registry.CreateSubKey("SKProCH's Launcher", true);
+                if (Convert.ToString(registry.GetValue("PATH")) == "")
+                {
+                    registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
+
+                    SetURLProcessing();
+
+                    SKProCHLauncher.MainWindow.CFG = new UserConfig();
+                    registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(SKProCHLauncher.MainWindow.CFG));
+                }
+                else if (Convert.ToString(registry.GetValue("PATH")) != Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]))
+                {
+                    if (File.Exists(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe")))
+                    {
+                        Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
+                        Environment.Exit(11);
+                    }
+                    else
+                    {
+                        var result = MessageBox.Show(
+                                                     "Неведомая сила переместила программу в другую директорию. \nЕсли выберите Да, то мы привяжемся к этой директории. \nЕсли выберете Нет, то мы скачаем последнюю версию в старую директорию",
+                                                     "Смена директории", MessageBoxButton.YesNo);
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
+                            SetURLProcessing();
+                        }
+                        else if (result == MessageBoxResult.No)
+                        {
+                            //
+                        }
+                    }
+                }
+
+                #endregion
+
+                SKProCHLauncher.MainWindow.InstallPath = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
                 application.Run();
             }
             else{
@@ -120,6 +163,19 @@ namespace SKProCHLauncher
         }
 
         const uint WM_COPYDATA = 0x004A;
-        
+
+        private static void SetURLProcessing()
+        {
+            var URLHandler = Registry.ClassesRoot;
+            URLHandler = URLHandler.CreateSubKey("skpmclaucnher");
+            URLHandler.SetValue("",             "SKProCH's Launcher");
+            URLHandler.SetValue("URL Protocol", "");
+            var iconURLHandler = URLHandler.CreateSubKey("DefaultIcon");
+            iconURLHandler.SetValue("", Environment.GetCommandLineArgs()[0]);
+            URLHandler = URLHandler.CreateSubKey("shell");
+            URLHandler = URLHandler.CreateSubKey("open");
+            URLHandler = URLHandler.CreateSubKey("command");
+            URLHandler.SetValue("", '"' + Environment.GetCommandLineArgs()[0] + '"' + " " + '"' + "%1" + '"');
+        }
     }
 }

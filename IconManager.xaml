@@ -76,8 +76,8 @@
                     </StackPanel>
                     <TextBlock Foreground="White" FontSize="14" TextAlignment="Center" Text="Ссылка на файл иконки:"
                                HorizontalAlignment="Center" TextWrapping="Wrap" />
-                    <TextBox Foreground="White" x:Name="IconPath"
-                             Text="{Binding Path=IconPathString, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox x:Name="IconPath" Height="35"
+                             Text="{Binding Path=IconPathString, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" Foreground="White" TextChanged="IconPath_TextChanged"/>
                     <Button x:Name="ChoseIconFile" Height="25" Margin="0,2,0,10" Padding="16,4">или выбрать файл</Button>
                     <TextBlock Foreground="White" FontSize="14" TextAlignment="Center" Text="Название:"
                                HorizontalAlignment="Center" TextWrapping="Wrap" />

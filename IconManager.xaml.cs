@@ -16,16 +16,33 @@ namespace SKProCHLauncher
     /// <summary>
     ///     Логика взаимодействия для IconManager.xaml
     /// </summary>
-    public partial class IconManager
+    class MagicAttribute : Attribute { }
+
+    [Magic]
+    public abstract class PropertyChangedBase : INotifyPropertyChanged
+    {
+        protected virtual void RaisePropertyChanged(string propName)
+        {
+            var e = PropertyChanged;
+            if (e != null)
+                e(this, new PropertyChangedEventArgs(propName));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+    }
+
+
+    public partial class IconManager : INotifyPropertyChanged
     {
         public static IconManager form;
         public IconManager() {
             InitializeComponent();
-            form        = this;
-            DataContext = this;
+            form             = this;
+            this.DataContext = this;
             InitializeIcons();
         }
 
+        //Load all icons
         private void InitializeIcons() {
             AllIcons.Visibility = Visibility.Visible;
             Dictionary<string, string> Default;
@@ -61,8 +78,6 @@ namespace SKProCHLauncher
                                        form.DefaultIconsListBox.Items.Clear();
                                        form.CustomIconsListBox.Items.Clear();
 
-                                       form.AllIcons.Visibility = Visibility.Visible;
-
                                        foreach (var defitem in Default){
                                            form.DefaultIconsListBox.Items.Add(new ListBoxIcons { IconName = defitem.Value, IconPath = defitem.Key });
                                        }
@@ -70,6 +85,8 @@ namespace SKProCHLauncher
                                            form.CustomIconsListBox.Items.Add(new ListBoxIcons { IconName = cusitem.Value, IconPath = cusitem.Key });
                                        }
                                        form.CustomIconsListBox.Items.Add(new ListBoxIcons { IconPath = @"https://gdurl.com/M8Ps", IconName = "Add icon" });
+
+                                       form.AllIcons.Visibility = Visibility.Visible;
                                    });
             if (!form.IsVisible) form.Show();
         }
@@ -138,7 +155,7 @@ namespace SKProCHLauncher
         }
 
         private void CheckInstallAvailable(object sender, TextChangedEventArgs e) {
-            if (ImageIsLoaded){
+            if (IsImageLoaded){
                 if (IconName.Text != "")
                     AddCustomIconButton.IsEnabled = true;
                 else
@@ -149,34 +166,38 @@ namespace SKProCHLauncher
             }
         }
 
-        #region ListBoxIcons Class
-
         private class ListBoxIcons
         {
             public string IconPath { get; set; }
             public string IconName { get; set; }
         }
 
-        #endregion
-
-        #region ImageLoader
-
-        private string      _IconPathString = "";
-        private ImageLoader Loader;
+        private bool IsImageLoaded
+        {
+            set
+            {
+                _IsImageLoaded = value;
+                CheckInstallAvailable(form, null);
+            }
+            get { return _IsImageLoaded; }
+        }
+        private bool _IsImageLoaded  = false;
+        string       _IconPathString = "";
+        ImageLoader  Loader          = null;
 
         public BitmapImage IconImageSource
         {
             get
             {
                 if (Loader != null) return Loader.Image;
-                return null;
+                else return null;
             }
         }
 
-        private string _ImageStatusText = "";
+        string _ImageStatusText = "";
         public string ImageStatusText
         {
-            get => _ImageStatusText;
+            get { return _ImageStatusText; }
             set
             {
                 _ImageStatusText = value;
@@ -186,7 +207,7 @@ namespace SKProCHLauncher
 
         public string IconPathString
         {
-            get => _IconPathString;
+            get { return _IconPathString; }
 
             set
             {
@@ -196,88 +217,99 @@ namespace SKProCHLauncher
                         Loader               =  null;
                     }
 
-                    if (string.IsNullOrEmpty(value)){
+                    if (String.IsNullOrEmpty(value)){
                         _IconPathString = "";
                         OnPropertyChanged("IconImageSource");
+                        IsImageLoaded = false;
                         return;
                     }
 
-                    var uri = new Uri(value);
+                    Uri uri = new Uri(value);
                     Loader               =  new ImageLoader(uri);
                     Loader.LoadCompleted += ImageLoadCompleted;
                     Loader.Run();
                     _IconPathString = value;
-                    ImageStatusText = "Подождите...";
+                    IsImageLoaded   = false;
                 }
                 catch (Exception ex){
-                    Debug.WriteLine(ex.ToString());
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
                     _IconPathString = "";
                     OnPropertyChanged("IconImageSource");
-                    ImageIsLoaded = false;
-                    CheckInstallAvailable(form, null);
+                    IsImageLoaded = false;
                 }
             }
         }
 
-        private void ImageLoadCompleted(object sender, EventArgs e) {
-            Dispatcher.Invoke(() => {
-                                  if ((sender as ImageLoader).Image != null){
-                                      ImageIsLoaded = true;
-                                      CheckInstallAvailable(form, null);
-                                  }
-                                  else{
-                                      _IconPathString = "";
-                                      ImageIsLoaded   = false;
-                                      CheckInstallAvailable(form, null);
-                                  }
+        void ImageLoadCompleted(object sender, EventArgs e) {
+            this.Dispatcher.Invoke(new Action(() => {
+                                                  if ((sender as ImageLoader).Image != null){
+                                                      IsImageLoaded = true;
+                                                  }
+                                                  else{
+                                                      _IconPathString = "";
+                                                      IsImageLoaded   = false;
+                                                  }
 
-                                  OnPropertyChanged("IconImageSource");
-                                  (sender as ImageLoader).LoadCompleted -= ImageLoadCompleted;
-                              });
+                                                  OnPropertyChanged("IconImageSource");
+                                                  (sender as ImageLoader).LoadCompleted -= ImageLoadCompleted;
+                                              }));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OnPropertyChanged(string name) {
+        void OnPropertyChanged(string name) {
             var handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(name));
         }
 
-        private static bool ImageIsLoaded;
+        private void IconPath_TextChanged(object sender, TextChangedEventArgs e) {
+            IconPath.Text = IconPath.Text.Remove(0, 20);
+        }
     }
 
     public class ImageLoader
     {
-        private readonly Uri _ImageUri;
+        Uri         _ImageUri;
+        BitmapImage _bi;
 
-        public ImageLoader(Uri uri) {
-            _ImageUri = uri;
+        public BitmapImage Image
+        {
+            get { return _bi; }
         }
-
-        public BitmapImage Image { get; private set; }
 
         public event EventHandler LoadCompleted;
 
-        private void OnLoadCompleted() {
+        void OnLoadCompleted()
+        {
             if (LoadCompleted != null) LoadCompleted(this, new EventArgs());
         }
 
-        private void LoadImage() {
+        public ImageLoader(Uri uri)
+        {
+            this._ImageUri = uri;
+        }
+
+        void LoadImage()
+        {
             BitmapImage bi;
-            try{
+            try
+            {
                 byte[] data;
 
-                if (_ImageUri.IsFile){
-                    data = File.ReadAllBytes(_ImageUri.LocalPath);
+                if (_ImageUri.IsFile)
+                {
+                    data = System.IO.File.ReadAllBytes(_ImageUri.LocalPath);
                 }
-                else{
-                    var client = new WebClient();
-                    using (client){
+                else
+                {
+                    var client = new System.Net.WebClient();
+                    using (client)
+                    {
                         data = client.DownloadData(_ImageUri);
                     }
                 }
 
-                var ms = new MemoryStream(data);
+                var ms = new System.IO.MemoryStream(data);
 
                 bi = new BitmapImage();
                 bi.BeginInit();
@@ -286,19 +318,20 @@ namespace SKProCHLauncher
                 bi.EndInit();
                 bi.Freeze();
             }
-            catch (Exception ex){
-                Debug.WriteLine(ex.ToString());
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
                 bi = null;
             }
-            Image = bi;
+            this._bi = bi;
             OnLoadCompleted();
         }
 
-        public void Run() {
-            var t = new Task(() => LoadImage());
+        public void Run()
+        {
+            Task t = new Task(() => LoadImage());
             t.Start();
         }
     }
-
-    #endregion
+    
 }
