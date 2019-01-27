@@ -23,6 +23,9 @@ namespace SKProCHLauncher
     {
         [STAThread]
         public static void Main() {
+            #region ParsingCommandLineArgs
+
+            bool AvailableModpacksChanged = false;
             foreach (var item in Environment.GetCommandLineArgs()){
                 if (item.Contains("skpmclaucnher:")){
                     var temp                      = JsonConvert.DeserializeObject<List<string>>(item.Replace("skpmclaucnher://", ""));
@@ -60,15 +63,18 @@ namespace SKProCHLauncher
 
                     AvailableModpacksRegistry.SetValue("AvailableModpacks",
                                                        JsonConvert.SerializeObject(AllAvailableModpacks));
+                    AvailableModpacksChanged = true;
                 }
             }
 
-            bool   existed;
+            #endregion
+
+            //Determining whether the application is already running
+            bool IsNotExisted;
             string guid = Marshal.GetTypeLibGuidForAssembly(Assembly.GetExecutingAssembly()).ToString();
+            Mutex mutexObj = new Mutex(true, guid, out IsNotExisted);
 
-            Mutex mutexObj = new Mutex(true, guid, out existed);
-
-            if (existed){
+            if (IsNotExisted){
                 var application = new App();
                 application.InitializeComponent();
                 application.Run();
@@ -76,19 +82,19 @@ namespace SKProCHLauncher
             else{
                 Process this_process = Process.GetCurrentProcess();
 
-                //найти все процессы с таким же именем
+                //Find all processes with the same name
                 Process[] other_processes =
                     Process.GetProcessesByName(this_process.ProcessName).Where(pr => pr.Id != this_process.Id).ToArray();
 
                 foreach (var pr in other_processes)
                 {
-                    pr.WaitForInputIdle(1000); //на случай, если процесс еще не загрузился
+                    pr.WaitForInputIdle(1000); //in case the process hasn't started yet
 
-                    //берем первый процесс с окном
+                    //take the first process with the window
                     IntPtr hWnd = pr.MainWindowHandle;
                     if (hWnd == IntPtr.Zero) continue;
 
-                    //отправляем команду
+                    //Send command
                     string command = "Hello";
                     var    cds     = new COPYDATASTRUCT();
                     cds.dwData = (IntPtr)1;
@@ -96,9 +102,7 @@ namespace SKProCHLauncher
                     cds.lpData = Marshal.StringToHGlobalUni(command);
                     SendMessage(hWnd, WM_COPYDATA, IntPtr.Zero, ref cds);
                     Marshal.FreeHGlobal(cds.lpData);
-
-                    //завершаем работу
-                    MessageBox.Show("Отправлено!");
+                    
                     Environment.Exit(0);
                 }
             }
@@ -116,19 +120,6 @@ namespace SKProCHLauncher
         }
 
         const uint WM_COPYDATA = 0x004A;
-
-
-        public static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == WM_COPYDATA)
-            {
-                COPYDATASTRUCT data = new COPYDATASTRUCT();
-                data = (COPYDATASTRUCT)Marshal.PtrToStructure(lParam, data.GetType());
-                MessageBox.Show("Received command: " + Marshal.PtrToStringUni(data.lpData));
-            }
-
-            return IntPtr.Zero;
-        }
-
+        
     }
 }

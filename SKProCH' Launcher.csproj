@@ -86,6 +86,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ConfigClasses.cs" />
     <Compile Include="IconManager.xaml.cs">
       <DependentUpon>IconManager.xaml</DependentUpon>
     </Compile>

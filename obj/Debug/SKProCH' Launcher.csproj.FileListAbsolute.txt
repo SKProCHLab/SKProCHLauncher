@@ -67,3 +67,5 @@ D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csproj.CoreComp
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH' Launcher.csproj.CopyComplete
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher.exe
 D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher.pdb
+D:\Programming\C#\SKProCH's Launcher\bin\Debug\unpack200.jar
+D:\Programming\C#\SKProCH's Launcher\obj\Debug\SKProCH Launcher_Content.g.cs

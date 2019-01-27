@@ -182,29 +182,30 @@ namespace SKProCHLauncher
         }
 
         private void DownloadAssets(string hash, bool hardupdate, string launcherfolder) {
-            bool IsNeedDownload = true;
+            bool IsNeedDownload = false;
             if (hardupdate){
                 IsNeedDownload = true;
             }
             else if(File.Exists(Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash))){
-                using (FileStream fs = new FileStream(Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash), FileMode.Open))
-                {
-                    using (BufferedStream bs = new BufferedStream(fs))
+                try{
+                    using (FileStream fs = new FileStream(Path.Combine(launcherfolder, "/assets/objects/", hash.Remove(2) + @"/" + hash), FileMode.Open))
                     {
-                        using (SHA1Managed sha1 = new SHA1Managed())
+                        using (BufferedStream bs = new BufferedStream(fs))
                         {
-                            byte[]        filehash      = sha1.ComputeHash(bs);
-                            StringBuilder formatted = new StringBuilder(2 * filehash.Length);
-                            foreach (byte b in hash)
-                            {
-                                formatted.AppendFormat("{0:X2}", b);
-                            }
-                            if (formatted.ToString() != hash)
-                            {
-                                IsNeedDownload = true;
+                            using (SHA1Managed sha1 = new SHA1Managed()){
+                                byte[]        filehash  = sha1.ComputeHash(bs);
+                                StringBuilder formatted = new StringBuilder(2 * filehash.Length);
+                                foreach (byte b in hash){
+                                    formatted.AppendFormat("{0:X2}", b);
+                                }
+
+                                IsNeedDownload = formatted.ToString() != hash;
                             }
                         }
                     }
+                }
+                catch (Exception ){
+                    IsNeedDownload = true;
                 }
             }
             else{
@@ -224,7 +225,7 @@ namespace SKProCHLauncher
         private void DownloadLibrary(Library lib, bool hardupdate, string launcherfolder) {
             WebClient wc = new WebClient();
             //If Artifact - simple download, not unzip to binaries
-            bool IsNeedDownload = true;
+            bool IsNeedDownload = false;
             if (lib.Downloads.Artifact != null){
                 if (hardupdate){
                     IsNeedDownload = true;
@@ -254,17 +255,7 @@ namespace SKProCHLauncher
                 }
 
                 if (IsNeedDownload){
-
-                    try{
-                        wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
-
-                    }
-                    catch (Exception){
-                        
-                    }
-                }
-                else{
-                    
+                    wc.DownloadFile(lib.Downloads.Artifact.Url, Path.Combine(launcherfolder, @"/libraries/", lib.Downloads.Artifact.Path));
                 }
 
             } //If Classifiers - download and unzip 
