@@ -44,7 +44,15 @@ namespace SKProCHLauncher
         }
 
         private void Button_Folder_Click(object sender, RoutedEventArgs e) {
-            Process.Start(InstallPath);
+            var relativePoint = Button_Folder.TransformToAncestor(form)
+                                                  .Transform(new Point(0, 0));
+            form.FoldersMenuStackPanel.Margin = new Thickness(relativePoint.X -5, relativePoint.Y + Button_Folder.ActualHeight, 0, 0);
+
+            form.FoldersMenu.Visibility = Visibility.Visible;
+        }
+        
+        private void FoldersMenuClose(object sender, MouseButtonEventArgs e) {
+            form.FoldersMenu.Visibility = Visibility.Collapsed;
         }
 
         private void ChooseMainModpacks_Event(object sender, MouseButtonEventArgs e) {
@@ -159,7 +167,7 @@ namespace SKProCHLauncher
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             WindowInteropHelper h      = new WindowInteropHelper(this);
             HwndSource          source = HwndSource.FromHwnd(h.Handle);
-            source.AddHook(new HwndSourceHook(WndProc)); //регистрируем обработчик сообщений            
+            source.AddHook(new HwndSourceHook(WndProc)); //регистрируем обработчик сообщений
         }
 
         #endregion

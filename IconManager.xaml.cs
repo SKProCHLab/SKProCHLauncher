@@ -172,6 +172,7 @@ namespace SKProCHLauncher
             public string IconName { get; set; }
         }
 
+        #region ImageLoading
         private bool IsImageLoaded
         {
             set
@@ -263,7 +264,7 @@ namespace SKProCHLauncher
         }
 
         private void IconPath_TextChanged(object sender, TextChangedEventArgs e) {
-            IconPath.Text = IconPath.Text.Remove(0, 20);
+            //IconPath.Text = IconPath.Text.Remove(0, 20);
         }
     }
 
@@ -333,5 +334,6 @@ namespace SKProCHLauncher
             t.Start();
         }
     }
-    
+
+#endregion
 }

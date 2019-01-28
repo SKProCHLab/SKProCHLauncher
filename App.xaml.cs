@@ -69,7 +69,7 @@ namespace SKProCHLauncher
             }
 
             #endregion
-
+            
             //Determining whether the application is already running
             bool IsNotExisted;
             string guid = Marshal.GetTypeLibGuidForAssembly(Assembly.GetExecutingAssembly()).ToString();
@@ -167,7 +167,7 @@ namespace SKProCHLauncher
         private static void SetURLProcessing()
         {
             var URLHandler = Registry.ClassesRoot;
-            URLHandler = URLHandler.CreateSubKey("skpmclaucnher");
+            URLHandler = URLHandler.CreateSubKey("skpmclauncher");
             URLHandler.SetValue("",             "SKProCH's Launcher");
             URLHandler.SetValue("URL Protocol", "");
             var iconURLHandler = URLHandler.CreateSubKey("DefaultIcon");
