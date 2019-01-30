@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 
 namespace SKProCHLauncher
 {
-    public class UserConfig
+    [Magic]
+    public class UserConfig : PropertyChangedBase
     {
         public UserConfig() {
             LocalModpacks    = new List<ModPack>();
@@ -18,7 +19,7 @@ namespace SKProCHLauncher
         public List<ModPack> ExportedModpacks { get; set; }
         public List<Account> Accounts         { get; set; }
 
-        public class Account
+        public class Account : PropertyChangedBase
         {
             public string NickName { get; set; }
             public string UUID     { get; set; }
@@ -29,7 +30,7 @@ namespace SKProCHLauncher
             public string Password { get; set; }
         }
 
-        public class ModPack
+        public class ModPack : PropertyChangedBase
         {
             private bool   DownLoadsScheduled;
             private object locker = new object();
@@ -189,7 +190,8 @@ namespace SKProCHLauncher
 
     #region AvailableModpacks
 
-    public class AvailableModpack
+    [Magic]
+    public class AvailableModpack : PropertyChangedBase
     {
         public string ID             { get; set; }
         public string Name           { get; set; }

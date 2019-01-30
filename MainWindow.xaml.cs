@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -21,15 +22,23 @@ namespace SKProCHLauncher
 
         private static Rectangle _сurrentChoosenTab;
 
+
+        public static List<AvailableModpack> AvailableModpacksList { get; set; }
+
         public MainWindow() {
             InitializeComponent();
             form        = this;
             DataContext = this;
 
+
+
+
+
             var iconManager = new IconManager();
 
             _сurrentChoosenTab =  ChooseMainModpacks;
             form.Activated     += Form_Activated;
+            
         }
 
         private void Button_Folder_Click(object sender, RoutedEventArgs e) {
@@ -76,10 +85,6 @@ namespace SKProCHLauncher
                                                                       Convert.ToString(AvailableModpacksRegistry.GetValue("AvailableModpacks", null)));
             if (!(AllAvailableModpacks == null || AllAvailableModpacks.Count == 0)){
                 NoModpacksAvailable.Visibility = Visibility.Collapsed;
-                LB_AvailableModpacks.Items.Clear();
-                foreach (var item in AllAvailableModpacks){
-                    LB_AvailableModpacks.Items.Add(item);
-                }
             }
             else{
                 AllAvailableModpacks = new List<AvailableModpack>();
@@ -87,6 +92,7 @@ namespace SKProCHLauncher
                                                    JsonConvert.SerializeObject(AllAvailableModpacks));
                 NoModpacksAvailable.Visibility = Visibility.Visible;
             }
+            AvailableModpacksList = AllAvailableModpacks;
         }
 
         private void LB_MainModpack_Event(object sender, MouseButtonEventArgs e) {
@@ -129,6 +135,17 @@ namespace SKProCHLauncher
                                                new ThicknessAnimation(new Thickness(relativePoint.X, 0, 0, 0), TimeSpan.FromSeconds(duration)));
         }
 
+        public static void BringToFrond(MainWindow mw = null) {
+            if (mw == null){
+                mw = form;
+            }
+            bool temp = form.Topmost;
+            form.Topmost = true;
+            form.Topmost = temp;
+            // Set focus to the window.
+            form.Activate();
+        }
+
         [DllImport("user32.dll")]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
 
@@ -148,8 +165,14 @@ namespace SKProCHLauncher
                 var data = new COPYDATASTRUCT();
                 data = (COPYDATASTRUCT) Marshal.PtrToStructure(lParam, data.GetType());
                 MessageBox.Show("Received command: " + Marshal.PtrToStringUni(data.lpData));
-            }
+                switch (Marshal.PtrToStringUni(data.lpData))
+                {
+                    case "UpdateAvailablesModpacks":
+                        form.ChooseAvailableModpacks_Event(form, null);
 
+                    break;
+                }
+            }
             return IntPtr.Zero;
         }
 
@@ -160,6 +183,7 @@ namespace SKProCHLauncher
         }
 
         #endregion
+        
     }
 
     public class TopMarginConverter : IValueConverter

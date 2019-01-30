@@ -11,7 +11,7 @@
         TextElement.FontWeight="Medium"
         TextElement.FontSize="14"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
-        Title="SKProCH's Launcher" Height="450" Width="800" ResizeMode="NoResize" Loaded="Window_Loaded">
+        Title="SKProCH's Launcher" Height="450" MinWidth="800" Width="800" Loaded="Window_Loaded">
     <Grid>
         <Grid.Resources>
             <local:TopMarginConverter x:Key="TopMarginConverter" />
@@ -134,7 +134,7 @@
                 </Grid>
                 <Grid x:Name="AvailableModpacks" Visibility="Hidden">
                     <ListBox x:Name="LB_AvailableModpacks" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             MouseLeftButtonDown="LB_AvailableModpacks_Event">
+                             MouseLeftButtonDown="LB_AvailableModpacks_Event" ItemsSource="{Binding AvailableModpacksList}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="5,0" Height="80" Width="80">

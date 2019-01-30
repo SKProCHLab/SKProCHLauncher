@@ -128,7 +128,7 @@ namespace SKProCHLauncher
                     if (hWnd == IntPtr.Zero) continue;
 
                     //Send command
-                    var command = "Hello";
+                    var command = "UpdateAvailablesModpacks";
                     var cds     = new COPYDATASTRUCT();
                     cds.dwData = (IntPtr) 1;
                     cds.cbData = (command.Length + 1) * 2;

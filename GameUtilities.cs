@@ -105,6 +105,12 @@ namespace SKProCHLauncher
         }
 
 
+
+
+
+
+
+
         public string GetMinecraftVersionsManifest(string url = "https://launchermeta.mojang.com/mc/game/version_manifest.json") {
             using (var wc = new WebClient()){
                 return wc.DownloadString(url);
@@ -126,9 +132,12 @@ namespace SKProCHLauncher
             }
             return null;
         }
+        
+        public void InstallMinecraft() {
+            
+        }
 
-
-        private InstallMinecraftResults InstallMinecraft(string version, string launcherfolder, bool hardupdate = false, GlobalMinecraftVersions mcmanifest = null) {
+        private InstallMinecraftResults InstallMinecraftMethod(string version, string launcherfolder, bool hardupdate = false, GlobalMinecraftVersions mcmanifest = null) {
             while (true){
                 lock (ForLock){
                     if (!IsRunning){
