@@ -1,26 +1,15 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using Ionic.Zip;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using Exception = System.Exception;
-using MessageBox = System.Windows.MessageBox;
-using Path = System.IO.Path;
 
 namespace SKProCHLauncher
 {
@@ -34,8 +23,8 @@ namespace SKProCHLauncher
 
         public MainWindow() {
             InitializeComponent();
-            form = this;
-            this.DataContext = this;
+            form        = this;
+            DataContext = this;
 
             var iconManager = new IconManager();
 
@@ -45,12 +34,12 @@ namespace SKProCHLauncher
 
         private void Button_Folder_Click(object sender, RoutedEventArgs e) {
             var relativePoint = Button_Folder.TransformToAncestor(form)
-                                                  .Transform(new Point(0, 0));
-            form.FoldersMenuStackPanel.Margin = new Thickness(relativePoint.X -5, relativePoint.Y + Button_Folder.ActualHeight, 0, 0);
+                                             .Transform(new Point(0, 0));
+            form.FoldersMenuStackPanel.Margin = new Thickness(relativePoint.X - 5, relativePoint.Y + Button_Folder.ActualHeight, 0, 0);
 
             form.FoldersMenu.Visibility = Visibility.Visible;
         }
-        
+
         private void FoldersMenuClose(object sender, MouseButtonEventArgs e) {
             form.FoldersMenu.Visibility = Visibility.Collapsed;
         }
@@ -151,12 +140,12 @@ namespace SKProCHLauncher
             public IntPtr lpData;
         }
 
-        const uint WM_COPYDATA = 0x004A;
+        private const uint WM_COPYDATA = 0x004A;
 
 
         public static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
             if (msg == WM_COPYDATA){
-                COPYDATASTRUCT data = new COPYDATASTRUCT();
+                var data = new COPYDATASTRUCT();
                 data = (COPYDATASTRUCT) Marshal.PtrToStructure(lParam, data.GetType());
                 MessageBox.Show("Received command: " + Marshal.PtrToStringUni(data.lpData));
             }
@@ -165,9 +154,9 @@ namespace SKProCHLauncher
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e) {
-            WindowInteropHelper h      = new WindowInteropHelper(this);
-            HwndSource          source = HwndSource.FromHwnd(h.Handle);
-            source.AddHook(new HwndSourceHook(WndProc)); //регистрируем обработчик сообщений
+            var h      = new WindowInteropHelper(this);
+            var source = HwndSource.FromHwnd(h.Handle);
+            source.AddHook(WndProc); //регистрируем обработчик сообщений
         }
 
         #endregion
@@ -188,5 +177,4 @@ namespace SKProCHLauncher
 
         #endregion
     }
-
 }

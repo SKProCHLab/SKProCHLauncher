@@ -8,7 +8,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("tabs_left.png")]
-[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("tabs_right.png")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("unpack200.jar")]
 
 

@@ -8,12 +8,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Forms;
-using System.Windows.Interop;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using Application = System.Windows.Application;
-using MessageBox = System.Windows.MessageBox;
 
 namespace SKProCHLauncher
 {
@@ -22,13 +18,14 @@ namespace SKProCHLauncher
     /// </summary>
     public partial class App : Application
     {
+        private const uint WM_COPYDATA = 0x004A;
         [STAThread]
         public static void Main() {
             #region ParsingCommandLineArgs
 
-            bool AvailableModpacksChanged = false;
+            var AvailableModpacksChanged = false;
             foreach (var item in Environment.GetCommandLineArgs()){
-                if (item.Contains("skpmclaucnher:")){
+                if (item.Contains("skpmclauncher:")){
                     var temp                      = JsonConvert.DeserializeObject<List<string>>(item.Replace("skpmclaucnher://", ""));
                     var AvailableModpacksRegistry = Registry.LocalMachine;
                     AvailableModpacksRegistry = AvailableModpacksRegistry.OpenSubKey("SOFTWARE", true);
@@ -69,11 +66,11 @@ namespace SKProCHLauncher
             }
 
             #endregion
-            
+
             //Determining whether the application is already running
             bool IsNotExisted;
-            string guid = Marshal.GetTypeLibGuidForAssembly(Assembly.GetExecutingAssembly()).ToString();
-            Mutex mutexObj = new Mutex(true, guid, out IsNotExisted);
+            var  guid     = Marshal.GetTypeLibGuidForAssembly(Assembly.GetExecutingAssembly()).ToString();
+            var  mutexObj = new Mutex(true, guid, out IsNotExisted);
 
             if (IsNotExisted){
                 var application = new App();
@@ -84,8 +81,7 @@ namespace SKProCHLauncher
                 var registry = Registry.LocalMachine;
                 registry = registry.OpenSubKey("SOFTWARE", true);
                 registry = registry.CreateSubKey("SKProCH's Launcher", true);
-                if (Convert.ToString(registry.GetValue("PATH")) == "")
-                {
+                if (Convert.ToString(registry.GetValue("PATH")) == ""){
                     registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
 
                     SetURLProcessing();
@@ -93,25 +89,20 @@ namespace SKProCHLauncher
                     SKProCHLauncher.MainWindow.CFG = new UserConfig();
                     registry.SetValue("GlobalConfig", JsonConvert.SerializeObject(SKProCHLauncher.MainWindow.CFG));
                 }
-                else if (Convert.ToString(registry.GetValue("PATH")) != Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]))
-                {
-                    if (File.Exists(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe")))
-                    {
+                else if (Convert.ToString(registry.GetValue("PATH")) != Path.GetDirectoryName(Environment.GetCommandLineArgs()[0])){
+                    if (File.Exists(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"))){
                         Process.Start(Path.Combine(registry.GetValue("PATH") + @"\SKProCH's Launcher.exe"));
                         Environment.Exit(11);
                     }
-                    else
-                    {
+                    else{
                         var result = MessageBox.Show(
                                                      "Неведомая сила переместила программу в другую директорию. \nЕсли выберите Да, то мы привяжемся к этой директории. \nЕсли выберете Нет, то мы скачаем последнюю версию в старую директорию",
                                                      "Смена директории", MessageBoxButton.YesNo);
-                        if (result == MessageBoxResult.Yes)
-                        {
+                        if (result == MessageBoxResult.Yes){
                             registry.SetValue("PATH", Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]));
                             SetURLProcessing();
                         }
-                        else if (result == MessageBoxResult.No)
-                        {
+                        else if (result == MessageBoxResult.No){
                             //
                         }
                     }
@@ -123,29 +114,28 @@ namespace SKProCHLauncher
                 application.Run();
             }
             else{
-                Process this_process = Process.GetCurrentProcess();
+                var this_process = Process.GetCurrentProcess();
 
                 //Find all processes with the same name
-                Process[] other_processes =
+                var other_processes =
                     Process.GetProcessesByName(this_process.ProcessName).Where(pr => pr.Id != this_process.Id).ToArray();
 
-                foreach (var pr in other_processes)
-                {
+                foreach (var pr in other_processes){
                     pr.WaitForInputIdle(1000); //in case the process hasn't started yet
 
                     //take the first process with the window
-                    IntPtr hWnd = pr.MainWindowHandle;
+                    var hWnd = pr.MainWindowHandle;
                     if (hWnd == IntPtr.Zero) continue;
 
                     //Send command
-                    string command = "Hello";
-                    var    cds     = new COPYDATASTRUCT();
-                    cds.dwData = (IntPtr)1;
+                    var command = "Hello";
+                    var cds     = new COPYDATASTRUCT();
+                    cds.dwData = (IntPtr) 1;
                     cds.cbData = (command.Length + 1) * 2;
                     cds.lpData = Marshal.StringToHGlobalUni(command);
                     SendMessage(hWnd, WM_COPYDATA, IntPtr.Zero, ref cds);
                     Marshal.FreeHGlobal(cds.lpData);
-                    
+
                     Environment.Exit(0);
                 }
             }
@@ -154,18 +144,7 @@ namespace SKProCHLauncher
         [DllImport("user32.dll")]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, ref COPYDATASTRUCT lParam);
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct COPYDATASTRUCT
-        {
-            public IntPtr dwData;
-            public int    cbData;
-            public IntPtr lpData;
-        }
-
-        const uint WM_COPYDATA = 0x004A;
-
-        private static void SetURLProcessing()
-        {
+        private static void SetURLProcessing() {
             var URLHandler = Registry.ClassesRoot;
             URLHandler = URLHandler.CreateSubKey("skpmclauncher");
             URLHandler.SetValue("",             "SKProCH's Launcher");
@@ -176,6 +155,14 @@ namespace SKProCHLauncher
             URLHandler = URLHandler.CreateSubKey("open");
             URLHandler = URLHandler.CreateSubKey("command");
             URLHandler.SetValue("", '"' + Environment.GetCommandLineArgs()[0] + '"' + " " + '"' + "%1" + '"');
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct COPYDATASTRUCT
+        {
+            public IntPtr dwData;
+            public int    cbData;
+            public IntPtr lpData;
         }
     }
 }

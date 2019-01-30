@@ -38,13 +38,14 @@
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Folder" Height="24" Width="24" Margin="0,0,1,0" />
                         <TextBlock VerticalAlignment="Center">Папка</TextBlock>
-                        <materialDesign:PackIcon Kind="Triangle" Height="5" Width="5" Margin="0,0,1,0" RenderTransformOrigin="0.5,0.5" VerticalAlignment="Bottom">
+                        <materialDesign:PackIcon Kind="Triangle" Height="5" Width="5" Margin="0,0,1,0"
+                                                 RenderTransformOrigin="0.5,0.5" VerticalAlignment="Bottom">
                             <materialDesign:PackIcon.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform/>
-                                    <SkewTransform/>
-                                    <RotateTransform Angle="180"/>
-                                    <TranslateTransform/>
+                                    <ScaleTransform />
+                                    <SkewTransform />
+                                    <RotateTransform Angle="180" />
+                                    <TranslateTransform />
                                 </TransformGroup>
                             </materialDesign:PackIcon.RenderTransform>
                         </materialDesign:PackIcon>
@@ -167,19 +168,21 @@
         </Grid>
 
         <Grid x:Name="FoldersMenu" Visibility="Collapsed">
-            <Rectangle Opacity="0" Fill="#FFAE4343" MouseLeftButtonDown="FoldersMenuClose"></Rectangle>
-            <Grid x:Name="FoldersMenuStackPanel" VerticalAlignment="Top"  HorizontalAlignment="Left">
-                <Rectangle RadiusX="5" RadiusY="5" Fill="#FF3C3C3C" Stroke="#FF303030"></Rectangle>
-                <StackPanel Orientation="Vertical" Margin="5,0,-1,0" >
-                    <Button x:Name="MainMenuFolder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" HorizontalContentAlignment="Left"
-                        Margin="0,5,6,5" Padding="3,2,5,2">
+            <Rectangle Opacity="0" Fill="#FFAE4343" MouseLeftButtonDown="FoldersMenuClose" />
+            <Grid x:Name="FoldersMenuStackPanel" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <Rectangle RadiusX="5" RadiusY="5" Fill="#FF3C3C3C" Stroke="#FF303030" />
+                <StackPanel Orientation="Vertical" Margin="5,0,-1,0">
+                    <Button x:Name="MainMenuFolder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C"
+                            HorizontalContentAlignment="Left"
+                            Margin="0,5,6,5" Padding="3,2,5,2">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Settings" Height="24" Width="24" Margin="0,0,1,0" />
                             <TextBlock VerticalAlignment="Center">Главное меню программы</TextBlock>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="InstancesFolder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C" HorizontalContentAlignment="Left"
-                        Margin="0,5,6,5" Padding="3,2,5,2">
+                    <Button x:Name="InstancesFolder" Height="30" BorderBrush="#FF3C3C3C" Background="#FF3C3C3C"
+                            HorizontalContentAlignment="Left"
+                            Margin="0,5,6,5" Padding="3,2,5,2">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Settings" Height="24" Width="24" Margin="0,0,1,0" />
                             <TextBlock VerticalAlignment="Center">Папка локальных сборок</TextBlock>

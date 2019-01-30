@@ -1,239 +1,189 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace SKProCHLauncher
 {
     public class UserConfig
     {
-        public UserConfig()
-        {
-            LocalModpacks = new List<ModPack>();
+        public UserConfig() {
+            LocalModpacks    = new List<ModPack>();
             ExportedModpacks = new List<ModPack>();
-            Accounts = new List<Account>();
+            Accounts         = new List<Account>();
         }
 
-        public List<ModPack> LocalModpacks { get; set; }
+        public List<ModPack> LocalModpacks    { get; set; }
         public List<ModPack> ExportedModpacks { get; set; }
-        public List<Account> Accounts { get; set; }
+        public List<Account> Accounts         { get; set; }
 
         public class Account
         {
             public string NickName { get; set; }
-            public string UUID { get; set; }
+            public string UUID     { get; set; }
 
             public bool IsLegacy { get; set; }
 
-            public string Login { get; set; }
+            public string Login    { get; set; }
             public string Password { get; set; }
         }
 
         public class ModPack
         {
+            private bool   DownLoadsScheduled;
             private object locker = new object();
 
-            private bool DownLoadsScheduled;
-
             private string NewVersion;
-            public string Name { get; set; }
-            public string ServerName { get; set; }
-            public string UpdatesURL { get; set; }
-            public int[] CurrentVersion { get; set; }
-            public int MaxNumbersInVersions { get; set; }
-            public string Icon { get; set; }
-            public string PathToClient { get; set; }
+            public  string Name                 { get; set; }
+            public  string ServerName           { get; set; }
+            public  string UpdatesURL           { get; set; }
+            public  int[]  CurrentVersion       { get; set; }
+            public  int    MaxNumbersInVersions { get; set; }
+            public  string Icon                 { get; set; }
+            public  string PathToClient         { get; set; }
 
             public bool IsLocal { get; set; }
 
             //OnlyLocal
-            public string MinecraftVersion { get; set; } //Minecraft Version
-            public string ForgeID { get; set; } //Forge Version
-            public List<Account> Accounts { get; set; }
-            public int ChoosenAccountIndex { get; set; }
-            public bool IsLocalAssets { get; set; }
-            public bool IsLocalLibraties { get; set; }
+            public string        MinecraftVersion    { get; set; } //Minecraft Version
+            public string        ForgeID             { get; set; } //Forge Version
+            public List<Account> Accounts            { get; set; }
+            public int           ChoosenAccountIndex { get; set; }
+            public bool          IsLocalAssets       { get; set; }
+            public bool          IsLocalLibraties    { get; set; }
 
-            private void CheckUpdates()
-            {
-                try
-                {
+            private void CheckUpdates() {
+                try{
                     var wc = new WebClient();
                     wc.DownloadFile(UpdatesURL, Path.Combine(Path.GetTempPath(), @"\SKProCH's Version File.tmp"));
-                    try
-                    {
+                    try{
                         var VersionsContent = File.ReadAllText(Path.Combine(Path.GetTempPath(), @"\SKProCH's Version File.tmp"));
                         File.Delete(Path.Combine(Path.GetTempPath(), @"\SKProCH's Version File.tmp"));
 
-                        try
-                        {
+                        try{
                             var MU = JsonConvert.DeserializeObject<ModpackInfo>(VersionsContent);
 
                             //Checking new versions
-                            List<ModpackInfo.Version> VersionsToUpdate = new List<ModpackInfo.Version>();
-                            foreach (var version in MU.Versions)
-                            {
-                                if (VersionCompare(CurrentVersion, version.VersionID, MU.MaxNumbersInVersions))
-                                {
-                                    VersionsToUpdate.Add(version);
-                                }
+                            var VersionsToUpdate = new List<ModpackInfo.Version>();
+                            foreach (var version in MU.Versions){
+                                if (VersionCompare(CurrentVersion, version.VersionID, MU.MaxNumbersInVersions)) VersionsToUpdate.Add(version);
                             }
 
                             //Updating if we have something to update
                             if (VersionsToUpdate.Count != 0)
-                            {
-                                foreach (var version in VersionsToUpdate)
-                                {
-
+                                foreach (var version in VersionsToUpdate){
                                     //Let's delete
-                                    List<string> FilesToDelete = new List<string>();
-                                    foreach (var VARIABLE in version.ListToDelete)
-                                    {
-                                        try
-                                        {
-                                            if (!System.IO.Directory.Exists(VARIABLE) && System.IO.File.Exists(VARIABLE))
-                                            {
+                                    var FilesToDelete = new List<string>();
+                                    foreach (var VARIABLE in version.ListToDelete){
+                                        try{
+                                            if (!Directory.Exists(VARIABLE) && File.Exists(VARIABLE))
                                                 FilesToDelete.Add(VARIABLE);
-                                            }
-                                            else if (System.IO.Directory.Exists(VARIABLE) && !System.IO.File.Exists(VARIABLE))
-                                            {
-                                                foreach (var folder in RecursiveFolderScan(VARIABLE))
-                                                {
+                                            else if (Directory.Exists(VARIABLE) && !File.Exists(VARIABLE))
+                                                foreach (var folder in RecursiveFolderScan(VARIABLE)){
                                                     FilesToDelete.AddRange(Directory.GetFiles(folder));
                                                 }
-                                            }
                                         }
-                                        catch (Exception)
-                                        {
+                                        catch (Exception){
                                         }
                                     }
-                                    foreach (var VARIABLE in FilesToDelete)
-                                    {
-                                        try
-                                        {
+                                    foreach (var VARIABLE in FilesToDelete){
+                                        try{
                                             File.SetAttributes(VARIABLE, FileAttributes.Normal);
                                             File.Delete(VARIABLE);
                                         }
-                                        catch (Exception e)
-                                        {
+                                        catch (Exception e){
                                             //
                                         }
                                     }
 
                                     //Let's download
-                                    foreach (var download in version.ListToDownload)
-                                    {
-                                        
+                                    foreach (var download in version.ListToDownload){
                                     }
-
                                 }
-                            }
                         }
-                        catch (Exception)
-                        {
+                        catch (Exception){
                         }
                     }
-                    catch (Exception)
-                    {
+                    catch (Exception){
                     }
+                }
+                catch (Exception){
+                }
+            }
 
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
+            public void InstallModpack(bool isExport, string path) {
             }
 
             /// <summary>
-            /// Return TRUE if Comparewith > Current
+            ///     Return TRUE if Comparewith > Current
             /// </summary>
-            public static bool VersionCompare(int[] current, int[] latest, int maxcount)
-            {
-                var pattern = new String('0', maxcount);
-                string ones = "1";
-                string twos = "1";
+            public static bool VersionCompare(int[] current, int[] latest, int maxcount) {
+                var pattern = new string('0', maxcount);
+                var ones    = "1";
+                var twos    = "1";
 
-                foreach (var i in current)
-                {
-                    ones += ((pattern + (Convert.ToString(i))).Remove(0, (pattern + (Convert.ToString(i))).Length - maxcount >= 0 ? (pattern + (Convert.ToString(i))).Length - maxcount : 0));
+                foreach (var i in current){
+                    ones += (pattern + Convert.ToString(i)).Remove(0, (pattern + Convert.ToString(i)).Length - maxcount >= 0 ? (pattern + Convert.ToString(i)).Length - maxcount : 0);
                 }
 
-                foreach (var i in latest)
-                {
-                    twos += ((pattern + (Convert.ToString(i))).Remove(0, (pattern + (Convert.ToString(i))).Length - maxcount >= 0 ? (pattern + (Convert.ToString(i))).Length - maxcount : 0));
+                foreach (var i in latest){
+                    twos += (pattern + Convert.ToString(i)).Remove(0, (pattern + Convert.ToString(i)).Length - maxcount >= 0 ? (pattern + Convert.ToString(i)).Length - maxcount : 0);
                 }
 
-                if (Convert.ToUInt32(ones) < Convert.ToUInt32(twos))
-                {
-                    return true;
-                }
+                if (Convert.ToUInt32(ones) < Convert.ToUInt32(twos)) return true;
                 return false;
             }
 
-            public static List<string> RecursiveFolderScan(string dirname)
-            {
-                List<string> ToReturn = new List<string>();
+            public static List<string> RecursiveFolderScan(string dirname) {
+                var ToReturn = new List<string>();
                 if (Directory.Exists(dirname))
-                {
-                    foreach (var VARIABLE in Directory.GetDirectories(dirname))
-                    {
+                    foreach (var VARIABLE in Directory.GetDirectories(dirname)){
                         ToReturn.AddRange(RecursiveFolderScan(VARIABLE));
                         ToReturn.Add(VARIABLE);
                     }
-                }
                 return ToReturn;
             }
         }
     }
 
 
-
-
-
     public class ModpackInfo
     {
-        public ModpackInfo()
-        {
+        public ModpackInfo() {
             Versions = new List<Version>();
         }
 
-        public string ModpackName          { get; set; }
-        public string ModpackServer        { get; set; }
-        public string URL                  { get; set; }
-        public string Icon                 { get; set; } //URL To Icon
-        public string MCVersion            { get; set; } //Minecraft Version
-        public string ForgeVersion         { get; set; } //Forge Version
+        public string ModpackName   { get; set; }
+        public string ModpackServer { get; set; }
+        public string URL           { get; set; }
+        public string Icon          { get; set; } //URL To Icon
+        public string MCVersion     { get; set; } //Minecraft Version
+        public string ForgeVersion  { get; set; } //Forge Version
 
-        public int[]  CurrentVersion       { get; set; } //Versioning
-        public int    MaxNumbersInVersions { get; set; }
+        public int[] CurrentVersion       { get; set; } //Versioning
+        public int   MaxNumbersInVersions { get; set; }
 
-        public bool IsOnlyForLocal { get; set; }
-        public bool   IsRequireLocalAssets { get; set; }
-        public bool   IsRequireLocalLibs   { get; set; }
-        
-        public List<Version> Versions { get; set; }
+        public bool IsOnlyForLocal       { get; set; }
+        public bool IsRequireLocalAssets { get; set; }
+        public bool IsRequireLocalLibs   { get; set; }
+
+        public List<Version>     Versions     { get; set; }
         public List<Enchansment> Enchansments { get; set; }
 
         public class Version
         {
-            public int[]          VersionID      { get; set; }
-            public List<string>   ListToDelete   { get; set; }
-            public List<string> ListToDownload { get; set; }
-
-            public Version()
-            {
+            public Version() {
                 ListToDelete   = new List<string>();
                 ListToDownload = new List<string>();
             }
+            public int[]        VersionID      { get; set; }
+            public List<string> ListToDelete   { get; set; }
+            public List<string> ListToDownload { get; set; }
         }
 
-        public class Enchansment { 
-
+        public class Enchansment
+        {
         }
     }
 
